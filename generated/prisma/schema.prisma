@@ -1,0 +1,646 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// PENGGUNA & AUTENTIKASI
+model User {
+  id            Int       @id @default(autoincrement()) @map("user_id")
+  username      String    @unique
+  email         String    @unique
+  passwordHash  String    @map("password_hash")
+  phoneNumber   String?   @unique @map("phone_number")
+  accountType   String    @map("account_type")
+  emailVerified Boolean   @default(false) @map("email_verified")
+  phoneVerified Boolean   @default(false) @map("phone_verified")
+  accountStatus String    @default("active") @map("account_status")
+  // Tambahkan field untuk Google OAuth
+  googleId      String?   @unique @map("google_id")
+  lastLogin     DateTime? @map("last_login")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  profile                UserProfile?
+  vehicles               Vehicle[]
+  bookings               Booking[]
+  userPaymentMethods     UserPaymentMethod[]
+  notifications          Notification[]
+  parkingPasses          ParkingPass[]
+  placeRatings           PlaceRating[]
+  notificationSettings   NotificationSetting?
+  sessions               UserSession[]
+  EmailVerificationToken EmailVerificationToken[]
+  PhoneVerificationOtp   PhoneVerificationOtp[]
+  PasswordResetToken     PasswordResetToken[]
+
+  @@map("users")
+}
+
+model UserSession {
+  id           Int       @id @default(autoincrement()) @map("session_id")
+  userId       Int       @map("user_id")
+  token        String    @unique
+  deviceInfo   String?   @map("device_info")
+  ipAddress    String?   @map("ip_address")
+  lastActivity DateTime  @default(now()) @map("last_activity")
+  expiryTime   DateTime  @map("expiry_time")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("user_sessions")
+}
+
+model UserProfile {
+  id           Int       @id @default(autoincrement()) @map("profile_id")
+  userId       Int       @unique @map("user_id")
+  firstName    String?   @map("first_name")
+  lastName     String?   @map("last_name")
+  profilePhoto String?   @map("profile_photo")
+  gender       String?
+  dateOfBirth  DateTime? @map("date_of_birth")
+  address      String?
+  city         String?
+  state        String?
+  postalCode   String?   @map("postal_code")
+  country      String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("user_profiles")
+}
+
+// KENDARAAN
+model Vehicle {
+  id           Int       @id @default(autoincrement()) @map("vehicle_id")
+  userId       Int       @map("user_id")
+  licensePlate String    @unique @map("license_plate")
+  vehicleType  String    @map("vehicle_type")
+  brand        String?
+  model        String?
+  color        String?
+  rfidTag      String?   @map("rfid_tag")
+  length       Decimal?  @db.Decimal(5, 2)
+  width        Decimal?  @db.Decimal(5, 2)
+  height       Decimal?  @db.Decimal(5, 2)
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  user     User      @relation(fields: [userId], references: [id])
+  bookings Booking[]
+
+  @@map("vehicles")
+}
+
+// LOKASI PARKIR
+model Place {
+  id            Int       @id @default(autoincrement()) @map("place_id")
+  name          String
+  placeType     String    @map("place_type")
+  address       String
+  latitude      Decimal?  @db.Decimal(10, 8)
+  longitude     Decimal?  @db.Decimal(11, 8)
+  contactNumber String?   @map("contact_number")
+  email         String?
+  description   String?
+  totalCapacity Int       @map("total_capacity")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  parkingZones   ParkingZone[]
+  tariffPlans    TariffPlan[]
+  parkingPasses  ParkingPass[]
+  operatingHours OperatingHour[]
+  placeAdmins    PlaceAdmin[]
+  placeRatings   PlaceRating[]
+
+  @@map("places")
+}
+
+model ParkingZone {
+  id         Int       @id @default(autoincrement()) @map("zone_id")
+  placeId    Int       @map("place_id")
+  zoneName   String    @map("zone_name")
+  floorLevel String?   @map("floor_level")
+  zoneType   String?   @map("zone_type")
+  totalSlots Int       @map("total_slots")
+  isActive   Boolean   @default(true) @map("is_active")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  place        Place         @relation(fields: [placeId], references: [id])
+  parkingSlots ParkingSlot[]
+
+  @@map("parking_zones")
+}
+
+model ParkingSlot {
+  id                 Int       @id @default(autoincrement()) @map("slot_id")
+  zoneId             Int       @map("zone_id")
+  slotNumber         String    @map("slot_number")
+  slotType           String    @map("slot_type")
+  isReserved         Boolean   @default(false) @map("is_reserved")
+  isOccupied         Boolean   @default(false) @map("is_occupied")
+  isDisabledFriendly Boolean   @default(false) @map("is_disabled_friendly")
+  hasEvCharger       Boolean   @default(false) @map("has_ev_charger")
+  isActive           Boolean   @default(true) @map("is_active")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  parkingZone      ParkingZone        @relation(fields: [zoneId], references: [id])
+  slotAvailability SlotAvailability[]
+  bookings         Booking[]
+
+  @@map("parking_slots")
+}
+
+model SlotAvailability {
+  id             Int       @id @default(autoincrement()) @map("availability_id")
+  slotId         Int       @map("slot_id")
+  availableFrom  DateTime  @map("available_from")
+  availableUntil DateTime  @map("available_until")
+  isBookable     Boolean   @default(true) @map("is_bookable")
+  statusReason   String?   @map("status_reason")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  parkingSlot ParkingSlot @relation(fields: [slotId], references: [id])
+
+  @@map("slot_availability")
+}
+
+// HARGA & TARIF
+model TariffPlan {
+  id             Int       @id @default(autoincrement()) @map("plan_id")
+  placeId        Int       @map("place_id")
+  planName       String    @map("plan_name")
+  description    String?
+  effectiveFrom  DateTime  @map("effective_from")
+  effectiveUntil DateTime? @map("effective_until")
+  isActive       Boolean   @default(true) @map("is_active")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  place       Place        @relation(fields: [placeId], references: [id])
+  tariffRates TariffRate[]
+
+  @@map("tariff_plans")
+}
+
+model TariffRate {
+  id                 Int       @id @default(autoincrement()) @map("rate_id")
+  planId             Int       @map("plan_id")
+  vehicleType        String    @map("vehicle_type")
+  slotType           String    @map("slot_type")
+  startTime          DateTime? @map("start_time") @db.Time
+  endTime            DateTime? @map("end_time") @db.Time
+  dayCategory        String?   @map("day_category")
+  basePrice          Decimal   @map("base_price") @db.Decimal(10, 2)
+  hourlyRate         Decimal   @map("hourly_rate") @db.Decimal(10, 2)
+  dayRate            Decimal?  @map("day_rate") @db.Decimal(10, 2)
+  minimumCharge      Decimal   @default(0) @map("minimum_charge") @db.Decimal(10, 2)
+  gracePeriodMinutes Int       @default(15) @map("grace_period_minutes")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  tariffPlan TariffPlan @relation(fields: [planId], references: [id])
+
+  @@map("tariff_rates")
+}
+
+// BOOKING
+model Booking {
+  id                      Int       @id @default(autoincrement()) @map("booking_id")
+  userId                  Int       @map("user_id")
+  vehicleId               Int       @map("vehicle_id")
+  slotId                  Int       @map("slot_id")
+  promoCodeId             Int?      @map("promo_code_id")
+  bookingReference        String    @unique @map("booking_reference")
+  bookingTime             DateTime  @default(now()) @map("booking_time")
+  scheduledEntry          DateTime  @map("scheduled_entry")
+  scheduledExit           DateTime  @map("scheduled_exit")
+  actualEntry             DateTime? @map("actual_entry")
+  actualExit              DateTime? @map("actual_exit")
+  qrCode                  String?   @map("qr_code")
+  bookingStatus           String    @map("booking_status")
+  estimatedPrice          Decimal   @map("estimated_price") @db.Decimal(10, 2)
+  finalPrice              Decimal?  @map("final_price") @db.Decimal(10, 2)
+  cancellationReason      String?   @map("cancellation_reason")
+  cancellationTimeMinutes Int?      @map("cancellation_time_minutes")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  user              User               @relation(fields: [userId], references: [id])
+  vehicle           Vehicle            @relation(fields: [vehicleId], references: [id])
+  parkingSlot       ParkingSlot        @relation(fields: [slotId], references: [id])
+  promoCode         PromoCode?         @relation(fields: [promoCodeId], references: [id])
+  bookingStatusLogs BookingStatusLog[]
+  bookingPayment    BookingPayment?
+  accessLogs        AccessLog[]
+  bookingExtensions BookingExtension[]
+  placeRatings      PlaceRating[]
+  notifications     Notification[]
+
+  @@map("bookings")
+}
+
+model BookingStatusLog {
+  id             Int      @id @default(autoincrement()) @map("log_id")
+  bookingId      Int      @map("booking_id")
+  previousStatus String   @map("previous_status")
+  newStatus      String   @map("new_status")
+  changedBy      String   @map("changed_by")
+  reason         String?
+  statusTime     DateTime @default(now()) @map("status_time")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // Relations
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  @@map("booking_status_logs")
+}
+
+// PEMBAYARAN
+model BookingPayment {
+  id               Int       @id @default(autoincrement()) @map("payment_id")
+  bookingId        Int       @unique @map("booking_id")
+  paymentReference String?   @unique @map("payment_reference")
+  paymentStatus    String    @map("payment_status")
+  originalAmount   Decimal   @map("original_amount") @db.Decimal(10, 2)
+  discountAmount   Decimal   @default(0) @map("discount_amount") @db.Decimal(10, 2)
+  taxAmount        Decimal   @default(0) @map("tax_amount") @db.Decimal(10, 2)
+  surchargeAmount  Decimal   @default(0) @map("surcharge_amount") @db.Decimal(10, 2)
+  finalAmount      Decimal   @map("final_amount") @db.Decimal(10, 2)
+  isPrepaid        Boolean   @default(false) @map("is_prepaid")
+  isRefunded       Boolean   @default(false) @map("is_refunded")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  booking             Booking              @relation(fields: [bookingId], references: [id])
+  paymentTransactions PaymentTransaction[]
+  refundTransactions  RefundTransaction[]
+
+  @@map("booking_payments")
+}
+
+model PaymentTransaction {
+  id                   Int       @id @default(autoincrement()) @map("transaction_id")
+  paymentId            Int       @map("payment_id")
+  paymentMethodId      Int       @map("payment_method_id")
+  transactionReference String?   @unique @map("transaction_reference")
+  transactionType      String    @map("transaction_type")
+  amount               Decimal   @map("amount") @db.Decimal(10, 2)
+  currency             String    @default("IDR") @map("currency")
+  transactionStatus    String    @map("transaction_status")
+  gatewayResponse      String?   @map("gateway_response")
+  transactionData      String?   @map("transaction_data")
+  transactionTime      DateTime? @map("transaction_time")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  bookingPayment BookingPayment @relation(fields: [paymentId], references: [id])
+  paymentMethod  PaymentMethod  @relation(fields: [paymentMethodId], references: [id])
+
+  @@map("payment_transactions")
+}
+
+model RefundTransaction {
+  id                Int       @id @default(autoincrement()) @map("refund_id")
+  paymentId         Int       @map("payment_id")
+  refundReference   String?   @unique @map("refund_reference")
+  refundAmount      Decimal   @map("refund_amount") @db.Decimal(10, 2)
+  refundReason      String?   @map("refund_reason")
+  refundStatus      String    @map("refund_status")
+  processorResponse String?   @map("processor_response")
+  refundData        String?   @map("refund_data")
+  refundTime        DateTime? @map("refund_time")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  bookingPayment BookingPayment @relation(fields: [paymentId], references: [id])
+
+  @@map("refund_transactions")
+}
+
+model PaymentMethod {
+  id                   Int       @id @default(autoincrement()) @map("payment_method_id")
+  methodName           String    @map("method_name")
+  provider             String
+  methodType           String    @map("method_type")
+  description          String?
+  processingFeePercent Decimal   @default(0) @map("processing_fee_percent") @db.Decimal(5, 2)
+  fixedFee             Decimal   @default(0) @map("fixed_fee") @db.Decimal(10, 2)
+  supportsRefunds      Boolean   @default(true) @map("supports_refunds")
+  isActive             Boolean   @default(true) @map("is_active")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  paymentTransactions PaymentTransaction[]
+  userPaymentMethods  UserPaymentMethod[]
+  parkingPassPayments ParkingPassPayment[]
+
+  @@map("payment_methods")
+}
+
+model UserPaymentMethod {
+  id              Int       @id @default(autoincrement()) @map("user_payment_id")
+  userId          Int       @map("user_id")
+  paymentMethodId Int       @map("payment_method_id")
+  tokenReference  String    @map("token_reference")
+  maskedInfo      String?   @map("masked_info")
+  expiryInfo      String?   @map("expiry_info")
+  isDefault       Boolean   @default(false) @map("is_default")
+  isVerified      Boolean   @default(false) @map("is_verified")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  user          User          @relation(fields: [userId], references: [id])
+  paymentMethod PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+
+  @@map("user_payment_methods")
+}
+
+// PROMO DAN LANGGANAN
+model PromoCode {
+  id            Int       @id @default(autoincrement()) @map("promo_id")
+  code          String    @unique
+  description   String?
+  discountType  String    @map("discount_type")
+  discountValue Decimal   @map("discount_value") @db.Decimal(10, 2)
+  minimumSpend  Decimal   @default(0) @map("minimum_spend") @db.Decimal(10, 2)
+  validFrom     DateTime  @map("valid_from")
+  validUntil    DateTime? @map("valid_until")
+  usageLimit    Int?      @map("usage_limit")
+  usageCount    Int       @default(0) @map("usage_count")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  bookings Booking[]
+
+  @@map("promo_codes")
+}
+
+model ParkingPass {
+  id            Int       @id @default(autoincrement()) @map("pass_id")
+  userId        Int       @map("user_id")
+  placeId       Int       @map("place_id")
+  passType      String    @map("pass_type")
+  passReference String?   @unique @map("pass_reference")
+  startDate     DateTime  @map("start_date")
+  endDate       DateTime  @map("end_date")
+  price         Decimal   @map("price") @db.Decimal(10, 2)
+  status        String
+  autoRenew     Boolean   @default(false) @map("auto_renew")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  user                User                 @relation(fields: [userId], references: [id])
+  place               Place                @relation(fields: [placeId], references: [id])
+  parkingPassPayments ParkingPassPayment[]
+
+  @@map("parking_passes")
+}
+
+model ParkingPassPayment {
+  id                   Int       @id @default(autoincrement()) @map("pass_payment_id")
+  passId               Int       @map("pass_id")
+  paymentMethodId      Int       @map("payment_method_id")
+  amount               Decimal   @map("amount") @db.Decimal(10, 2)
+  paymentStatus        String    @map("payment_status")
+  transactionReference String?   @unique @map("transaction_reference")
+  paymentDate          DateTime? @map("payment_date")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  parkingPass   ParkingPass   @relation(fields: [passId], references: [id])
+  paymentMethod PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+
+  @@map("parking_pass_payments")
+}
+
+// LOG DAN PELACAKAN
+model AccessLog {
+  id                 Int      @id @default(autoincrement()) @map("log_id")
+  bookingId          Int      @map("booking_id")
+  logType            String   @map("log_type")
+  logTime            DateTime @default(now()) @map("log_time")
+  verificationMethod String?  @map("verification_method")
+  verifiedBy         String?  @map("verified_by")
+  location           String?
+  notes              String?
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  // Relations
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  @@map("access_logs")
+}
+
+model BookingExtension {
+  id               Int       @id @default(autoincrement()) @map("extension_id")
+  bookingId        Int       @map("booking_id")
+  originalEndTime  DateTime  @map("original_end_time")
+  newEndTime       DateTime  @map("new_end_time")
+  additionalCharge Decimal   @map("additional_charge") @db.Decimal(10, 2)
+  paymentStatus    String    @map("payment_status")
+  requestTime      DateTime  @default(now()) @map("request_time")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  @@map("booking_extensions")
+}
+
+// NOTIFIKASI & KOMUNIKASI
+model NotificationSetting {
+  id                     Int       @id @default(autoincrement()) @map("setting_id")
+  userId                 Int       @unique @map("user_id")
+  emailEnabled           Boolean   @default(true) @map("email_enabled")
+  smsEnabled             Boolean   @default(false) @map("sms_enabled")
+  pushEnabled            Boolean   @default(true) @map("push_enabled")
+  bookingConfirmation    Boolean   @default(true) @map("booking_confirmation")
+  paymentNotifications   Boolean   @default(true) @map("payment_notifications")
+  reminderNotifications  Boolean   @default(true) @map("reminder_notifications")
+  marketingNotifications Boolean   @default(false) @map("marketing_notifications")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("notification_settings")
+}
+
+model Notification {
+  id               Int       @id @default(autoincrement()) @map("notification_id")
+  userId           Int       @map("user_id")
+  bookingId        Int?      @map("booking_id")
+  notificationType String    @map("notification_type")
+  channel          String
+  content          String
+  isRead           Boolean   @default(false) @map("is_read")
+  sentTime         DateTime  @default(now()) @map("sent_time")
+  readTime         DateTime? @map("read_time")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user    User     @relation(fields: [userId], references: [id])
+  booking Booking? @relation(fields: [bookingId], references: [id])
+
+  @@map("notifications")
+}
+
+// REVIEW & RATING
+model PlaceRating {
+  id            Int       @id @default(autoincrement()) @map("rating_id")
+  placeId       Int       @map("place_id")
+  userId        Int       @map("user_id")
+  bookingId     Int       @map("booking_id")
+  ratingScore   Decimal   @map("rating_score") @db.Decimal(3, 1)
+  reviewComment String?   @map("review_comment")
+  ratingDate    DateTime  @default(now()) @map("rating_date")
+  isVerified    Boolean   @default(true) @map("is_verified")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  place   Place   @relation(fields: [placeId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  @@map("place_ratings")
+}
+
+// OPERASIONAL & ADMIN
+model OperatingHour {
+  id          Int       @id @default(autoincrement()) @map("hours_id")
+  placeId     Int       @map("place_id")
+  dayOfWeek   String    @map("day_of_week")
+  openingTime DateTime? @map("opening_time") @db.Time
+  closingTime DateTime? @map("closing_time") @db.Time
+  is24hours   Boolean   @default(false) @map("is_24hours")
+  isClosed    Boolean   @default(false) @map("is_closed")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  place Place @relation(fields: [placeId], references: [id])
+
+  @@map("operating_hours")
+}
+
+model PlaceAdmin {
+  id            Int       @id @default(autoincrement()) @map("admin_id")
+  placeId       Int       @map("place_id")
+  username      String    @unique
+  email         String    @unique
+  passwordHash  String    @map("password_hash")
+  fullName      String    @map("full_name")
+  role          String
+  contactNumber String?   @map("contact_number")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  place Place @relation(fields: [placeId], references: [id])
+
+  @@map("place_admins")
+}
+
+// LOG SISTEM
+model SystemLog {
+  id          Int      @id @default(autoincrement()) @map("log_id")
+  entityType  String   @map("entity_type")
+  entityId    Int      @map("entity_id")
+  action      String
+  performedBy String   @map("performed_by")
+  logLevel    String   @map("log_level")
+  logDetails  String?  @map("log_details")
+  logTime     DateTime @default(now()) @map("log_time")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("system_logs")
+}
+
+// Tabel untuk verifikasi email
+model EmailVerificationToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@map("email_verification_tokens")
+}
+
+// Tabel untuk verifikasi nomor telepon via OTP
+model PhoneVerificationOtp {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  phoneNumber String   @map("phone_number")
+  otp         String
+  expiresAt   DateTime @map("expires_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, otp])
+  @@map("phone_verification_otps")
+}
+
+// Model untuk menyimpan token reset password
+model PasswordResetToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@map("password_reset_tokens")
+}
