@@ -6,7 +6,7 @@ import {
 import { mapToVehicleEntity, VehicleEntity } from './vehicle.entity';
 
 export class UserEntity {
-  id?: number;
+  id: number;
   username: string;
   email: string;
   passwordHash: string;
@@ -23,7 +23,7 @@ export class UserEntity {
   Vehicle?: VehicleEntity[];
 
   constructor(param: {
-    id?: number;
+    id: number;
     username: string;
     email: string;
     passwordHash: string;
@@ -63,7 +63,7 @@ export function mapToUserEntity(param: {
   const { user, profile } = param;
 
   return {
-    id: user.id ?? 0,
+    id: user.id,
     username: user.username ?? '',
     email: user.email ?? '',
     passwordHash: user.passwordHash ?? '',

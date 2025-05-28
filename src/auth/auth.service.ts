@@ -109,6 +109,7 @@ export class AuthService {
         emailTokenExpiry.setHours(emailTokenExpiry.getHours() + 24); // Berlaku 24 jam
 
         const newUser = new UserEntity({
+          id: 0,
           username: username,
           email: email,
           passwordHash: passwordHash,
@@ -122,9 +123,18 @@ export class AuthService {
         });
 
         const newProfile = new UserProfileEntity({
-          firstName: firstName,
-          lastName: lastName,
+          firstName: firstName ?? '',
+          lastName: lastName ?? '',
           createdAt: new Date(),
+          profilePhoto: null,
+          address: null,
+          city: null,
+          country: null,
+          dateOfBirth: null,
+          gender: null,
+          postalCode: null,
+          state: null,
+          updatedAt: new Date(),
         });
 
         const userEntity = await this.authRepository.createUserRepository(
@@ -1063,6 +1073,7 @@ export class AuthService {
           const passwordHash = await bcrypt.hash(randomPassword, 10);
 
           const newUserEntity = new UserEntity({
+            id: 0,
             username: username,
             email: email,
             phoneNumber: '',
@@ -1080,7 +1091,15 @@ export class AuthService {
             firstName: googleUser.given_name ?? null,
             lastName: googleUser.family_name ?? null,
             profilePhoto: googleUser.picture ?? null,
-            createdAt: new Date() ?? null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            country: null,
+            address: null,
+            state: null,
+            city: null,
+            postalCode: null,
+            gender: null,
+            dateOfBirth: null,
           });
 
           userEntity = await this.authRepository.createUserRepository(

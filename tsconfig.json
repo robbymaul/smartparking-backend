@@ -17,6 +17,7 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
+    "esModuleInterop": true,
 
     // Add paths to resolve modules better
     "paths": {

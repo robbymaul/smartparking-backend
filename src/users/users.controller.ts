@@ -30,7 +30,7 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { UsersService } from './users.service';
 import { UserProfileResponseDto } from './dto/profile.dto';
-import { GetUserResponseDto } from './dto/user.dto';
+import { GetUserResponseDto, UpdatePasswordUserDto } from './dto/user.dto';
 import {
   CreateVehicleRequestDto,
   VehicleResponseDto,
@@ -290,6 +290,42 @@ export class UsersController {
     @Param('id', ParseIntPipe) id: number,
   ): Promise<WebSuccessResponse<NotificationResponseDto>> {
     const result = await this.usersService.deleteVehicleService(user, id);
+
+    return {
+      code: HttpStatus.OK,
+      status: true,
+      data: result,
+    };
+  }
+
+  @ApiOperation({ summary: 'update user password as user' })
+  @ApiOkResponse({
+    schema: {
+      properties: {
+        code: { type: 'number', example: 200 },
+        status: { type: 'boolean', example: true },
+        data: {
+          $ref: getSchemaPath(NotificationResponseDto),
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'update user password bad request',
+    type: WebErrorResponse,
+  })
+  @ApiBearerAuth()
+  @Post('/users/password')
+  @HttpCode(HttpStatus.OK)
+  async updateUserPassword(
+    @JWTAuthorization() user: any,
+    @Body() updatePasswordUser: UpdatePasswordUserDto,
+  ): Promise<WebSuccessResponse<NotificationResponseDto>> {
+    const result = await this.usersService.updatePasswordUserService(
+      user,
+      updatePasswordUser,
+    );
 
     return {
       code: HttpStatus.OK,

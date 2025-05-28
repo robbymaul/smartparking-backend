@@ -1,6 +1,29 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsEmail, IsOptional, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsEmail,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 import { UserEntity } from '../../entities/user.entity';
+
+export class UpdatePasswordUserDto {
+  @ApiProperty({ type: String, example: 'password' })
+  @IsString()
+  @MinLength(8)
+  oldPassword: string;
+
+  @ApiProperty({ type: String, example: 'password' })
+  @IsString()
+  @MinLength(8)
+  newPassword: string;
+
+  @ApiProperty({ type: String, example: 'password' })
+  @IsString()
+  @MinLength(8)
+  confirmNewPassword: string;
+}
 
 export class GetUserResponseDto {
   @ApiProperty({ type: String, example: 'robbymaul' })

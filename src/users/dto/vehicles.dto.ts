@@ -2,7 +2,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { VehicleEntity } from '../../entities/vehicle.entity';
 import {
   IsBoolean,
-  IsDateString,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -110,15 +109,6 @@ export class VehicleResponseDto {
   @IsOptional()
   @IsBoolean()
   isActive: boolean | null;
-
-  @ApiProperty({ example: '2025-04-14T12:00:00Z' })
-  @IsDateString()
-  createdAt: Date | null;
-
-  @ApiProperty({ example: '2025-04-15T10:30:00Z', required: false })
-  @IsOptional()
-  @IsDateString()
-  updatedAt: Date | null;
 }
 
 export function mapToVehicleResponseDto(
@@ -136,7 +126,5 @@ export function mapToVehicleResponseDto(
     width: vehicle.width ?? null,
     height: vehicle.height ?? null,
     isActive: vehicle.isActive,
-    createdAt: vehicle.createdAt,
-    updatedAt: vehicle.updatedAt ?? null,
   };
 }

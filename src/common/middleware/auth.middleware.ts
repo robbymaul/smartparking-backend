@@ -26,6 +26,11 @@ export class AuthMiddleware implements NestMiddleware {
   ) {}
 
   async use(req: any, res: any, next: (error?: any) => void) {
+    const excludedPaths = ['/api/v1/payments/midtrans/callback']; // kamu bisa tambahkan lebih dari satu path
+    if (excludedPaths.includes(req.path)) {
+      return next(); // skip middleware
+    }
+
     this.logger.debug('middleware for request authentication');
     const authType = await this.getAuthorizationHeaderValue(
       req,
@@ -77,6 +82,7 @@ export class AuthMiddleware implements NestMiddleware {
           id: true,
           username: true,
           email: true,
+          phoneNumber: true,
           accountType: true,
           accountStatus: true,
         },
@@ -114,6 +120,7 @@ export class AuthMiddleware implements NestMiddleware {
         id: user.id,
         username: user.username,
         email: user.email,
+        phoneNumber: user.phoneNumber,
         accountType: user.accountType,
         roles: roles,
       };

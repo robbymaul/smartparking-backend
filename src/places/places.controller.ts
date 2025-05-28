@@ -16,7 +16,6 @@ import {
   ApiResponse,
   getSchemaPath,
 } from '@nestjs/swagger';
-import { NotificationResponseDto } from '../auth/dto/notification.dto';
 import {
   WebErrorResponse,
   WebSuccessResponse,
@@ -28,6 +27,9 @@ import { PlacesService } from './places.service';
 import { PlaceResponseDto } from './dto/places.dto';
 import { CONFIG } from '../config/config.schema';
 import { NearbyPlaceDto } from './dto/place.nearby.dto';
+import { PlacesRatingDtoResponse } from './dto/places.rating.dto';
+import { ParkingZoneDtoResponse } from './dto/parking.zone.dto';
+import { ParkingSlotDtoResponse } from './dto/parking.slot.dto';
 
 @Controller(CONFIG.HEADER_API)
 export class PlacesController {
@@ -43,7 +45,7 @@ export class PlacesController {
         code: { type: 'number', example: 200 },
         status: { type: 'boolean', example: true },
         data: {
-          $ref: getSchemaPath(NotificationResponseDto),
+          $ref: getSchemaPath(PlaceResponseDto),
         },
       },
     },
@@ -150,6 +152,115 @@ export class PlacesController {
     this.logger.debug(`query: ${JSON.stringify(query)}`);
 
     const result = await this.placesService.getPlacesNearbyService(user, query);
+
+    return {
+      code: HttpStatus.OK,
+      status: true,
+      data: result,
+    };
+  }
+
+  @ApiOperation({ summary: 'get places ratings as user' })
+  @ApiOkResponse({
+    schema: {
+      properties: {
+        code: { type: 'number', example: 200 },
+        status: { type: 'boolean', example: true },
+        data: {
+          type: 'array',
+          $ref: getSchemaPath(PlacesRatingDtoResponse),
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'get places ratings bad request',
+    type: WebErrorResponse,
+  })
+  @ApiBearerAuth()
+  @Get('/places/:id/ratings')
+  @HttpCode(HttpStatus.OK)
+  async getListPlacesRating(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('page', ParseIntPipe) page: number,
+    @Query('limit', ParseIntPipe) limit: number,
+    @JWTAuthorization() user: any,
+  ): Promise<WebSuccessResponse<PlacesRatingDtoResponse[]>> {
+    const result = await this.placesService.getPlacesRatingService(
+      user,
+      id,
+      page,
+      limit,
+    );
+
+    return {
+      code: HttpStatus.OK,
+      status: true,
+      data: result,
+    };
+  }
+
+  @ApiOperation({ summary: 'get parking zones as user' })
+  @ApiOkResponse({
+    schema: {
+      properties: {
+        code: { type: 'number', example: 200 },
+        status: { type: 'boolean', example: true },
+        data: {
+          type: 'array',
+          $ref: getSchemaPath(ParkingZoneDtoResponse),
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'get parking zones bad request',
+    type: WebErrorResponse,
+  })
+  @ApiBearerAuth()
+  @Get('/places/:id/parking-zone')
+  @HttpCode(HttpStatus.OK)
+  async getListParkingZone(
+    @Param('id', ParseIntPipe) id: number,
+    @JWTAuthorization() user: any,
+  ): Promise<WebSuccessResponse<ParkingZoneDtoResponse[]>> {
+    const result = await this.placesService.getParkingZoneService(user, id);
+
+    return {
+      code: HttpStatus.OK,
+      status: true,
+      data: result,
+    };
+  }
+
+  @ApiOperation({ summary: 'get parking slots as user' })
+  @ApiOkResponse({
+    schema: {
+      properties: {
+        code: { type: 'number', example: 200 },
+        status: { type: 'boolean', example: true },
+        data: {
+          type: 'array',
+          $ref: getSchemaPath(ParkingZoneDtoResponse),
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'get parking slots bad request',
+    type: WebErrorResponse,
+  })
+  @ApiBearerAuth()
+  @Get('/parking-zone/:id/parking-slot')
+  @HttpCode(HttpStatus.OK)
+  async getListParkingSlot(
+    @Param('id', ParseIntPipe) id: number,
+    @JWTAuthorization() user: any,
+  ): Promise<WebSuccessResponse<ParkingSlotDtoResponse[]>> {
+    const result = await this.placesService.getParkingSlotService(user, id);
 
     return {
       code: HttpStatus.OK,

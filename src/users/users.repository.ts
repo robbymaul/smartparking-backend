@@ -52,6 +52,11 @@ export interface IUsersRepository {
     prisma: PrismaClient,
     vehicleEntity: VehicleEntity,
   ): Promise<void>;
+
+  updateUserPasswordRepository(
+    prisma: PrismaClient,
+    userEntity: UserEntity,
+  ): Promise<void>;
 }
 
 @Injectable()
@@ -60,6 +65,26 @@ export class UsersRepository implements IUsersRepository {
     private readonly prismaService: PrismaService,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
   ) {}
+
+  async updateUserPasswordRepository(
+    prisma: PrismaClient,
+    userEntity: UserEntity,
+  ): Promise<void> {
+    try {
+      await this.prismaService.user.update({
+        where: {
+          id: userEntity.id,
+        },
+        data: {
+          passwordHash: userEntity.passwordHash,
+        },
+      });
+    } catch (e) {
+      this.logger.error(`update user password repository ${e}`);
+
+      handlePrismaError(e, 'update user password repository');
+    }
+  }
 
   async deleteVehiclesRepository(
     prisma: PrismaClient,

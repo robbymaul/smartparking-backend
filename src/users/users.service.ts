@@ -8,7 +8,11 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { PrismaService } from '../prisma/prisma.service';
 import { IUsersRepository } from './users.repository';
-import { GetUserResponseDto, mapToGetUserResponseDto } from './dto/user.dto';
+import {
+  GetUserResponseDto,
+  mapToGetUserResponseDto,
+  UpdatePasswordUserDto,
+} from './dto/user.dto';
 import {
   mapToUserProfileResponseToDto,
   UserProfileResponseDto,
@@ -26,6 +30,7 @@ import {
   mapToNotificationResponseDto,
   NotificationResponseDto,
 } from '../auth/dto/notification.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -315,6 +320,68 @@ export class UsersService {
         return mapToNotificationResponseDto({
           success: true,
           message: 'vehicle berhasil di hapus',
+        });
+      },
+    );
+
+    return result;
+  }
+
+  async updatePasswordUserService(
+    user: any,
+    updatePasswordUser: UpdatePasswordUserDto,
+  ): Promise<NotificationResponseDto> {
+    if (
+      updatePasswordUser.newPassword !== updatePasswordUser.confirmNewPassword
+    ) {
+      throw new BadRequestException('password dan confirm password harus sama');
+    }
+
+    const userEntity = await this.checkExistingUser(user);
+
+    const validOldPassword = await bcrypt.compare(
+      updatePasswordUser.oldPassword,
+      userEntity.passwordHash,
+    );
+
+    if (!validOldPassword) {
+      throw new BadRequestException('password sebelumnya tidak sesuai');
+    }
+
+    userEntity.passwordHash = await bcrypt.hash(
+      updatePasswordUser.newPassword,
+      10,
+    );
+
+    const result = await this.prismaService.transactional(
+      async (prisma: PrismaClient): Promise<NotificationResponseDto> => {
+        await this.usersRepository.updateUserPasswordRepository(
+          prisma,
+          userEntity,
+        );
+
+        const newSystemLog = new SystemLogEntity({
+          entityType: 'user',
+          entityId: userEntity.id || 0,
+          action: 'user update password',
+          performedBy: `user:${userEntity.id}`,
+          logLevel: 'info',
+          logDetails: JSON.stringify({
+            userId: userEntity.id,
+            timestamp: new Date(),
+          }),
+          logTime: new Date(),
+          createdAt: new Date(),
+        });
+
+        await this.usersRepository.createSystemLogRepository(
+          prisma,
+          newSystemLog,
+        );
+
+        return mapToNotificationResponseDto({
+          success: true,
+          message: 'password berhasil di ubah',
         });
       },
     );

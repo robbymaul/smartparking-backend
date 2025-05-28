@@ -90,6 +90,9 @@ DATABASE_URL="postgresql://username:password@localhost:5432/smart_parking?schema
   
 # Install Google Auth Library
   npm install google-auth-library
+  
+# Install Midtrans Client
+    npm install midtrans-client
 ```
 
 # Struktur File Modul Booking

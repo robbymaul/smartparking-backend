@@ -21,6 +21,11 @@ import {
   PaymentTransactionEntity,
 } from '../entities/payment.transaction.entity';
 import { BookingStatusLogEntity } from '../entities/booking.status.log.entity';
+import {
+  mapToUserProfileEntity,
+  UserProfileEntity,
+} from '../entities/user.profile.entity';
+import { BookingStatus } from '../bookings/interfaces/booking-status.interface';
 
 export interface IPaymentsRepository {
   getBookingByIdRepository(bookingId: number): Promise<BookingEntity | null>;
@@ -72,6 +77,21 @@ export interface IPaymentsRepository {
   createBookingStatusLog(
     bookingStatusLogEnity: BookingStatusLogEntity,
   ): Promise<void>;
+
+  getUserProfileRepository(user: any): Promise<UserProfileEntity | null>;
+
+  findPaymentByReferenceRepository(
+    orderId: any,
+  ): Promise<BookingPaymentEntity | null>;
+
+  UpdateBookingPaymentStatusRepository(
+    payment: BookingPaymentEntity,
+  ): Promise<void>;
+
+  updateBookingCompletedStatusRepository(
+    payment: BookingPaymentEntity,
+    CONFIRMED: BookingStatus,
+  ): Promise<void>;
 }
 
 @Injectable()
@@ -80,6 +100,85 @@ export class PaymentsRepository implements IPaymentsRepository {
     private readonly prismaService: PrismaService,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
   ) {}
+
+  async updateBookingCompletedStatusRepository(
+    payment: BookingPaymentEntity,
+    CONFIRMED: BookingStatus,
+  ): Promise<void> {
+    try {
+      await this.prismaService.booking.update({
+        where: {
+          id: payment.bookingId,
+        },
+        data: {
+          bookingStatus: CONFIRMED,
+        },
+      });
+    } catch (e) {
+      this.logger.error(`update booking completed status repository ${e}`);
+
+      handlePrismaError(e, 'update booking completed status repository');
+    }
+  }
+
+  async UpdateBookingPaymentStatusRepository(
+    payment: BookingPaymentEntity,
+  ): Promise<void> {
+    try {
+      await this.prismaService.bookingPayment.update({
+        where: {
+          id: payment.id,
+        },
+        data: {
+          paymentStatus: payment.paymentStatus,
+        },
+      });
+    } catch (e) {
+      this.logger.error(`update booking payment status repository ${e}`);
+
+      handlePrismaError(e, 'update booking payment status repository');
+    }
+  }
+
+  async findPaymentByReferenceRepository(
+    orderId: any,
+  ): Promise<BookingPaymentEntity | null> {
+    try {
+      const bookingPayment = await this.prismaService.bookingPayment.findUnique(
+        {
+          where: {
+            paymentReference: orderId,
+          },
+        },
+      );
+
+      return bookingPayment
+        ? mapToBookingPaymentEntity({ bookingPayment: bookingPayment })
+        : null;
+    } catch (e) {
+      this.logger.error(`find payment by reference repository ${e}`);
+
+      handlePrismaError(e, 'find payment by reference repository');
+    }
+  }
+
+  async getUserProfileRepository(user: any): Promise<UserProfileEntity | null> {
+    try {
+      const userProfile = await this.prismaService.userProfile.findUnique({
+        where: {
+          userId: user.id,
+        },
+      });
+
+      return userProfile
+        ? mapToUserProfileEntity({ profile: userProfile })
+        : null;
+    } catch (e) {
+      this.logger.error(`get user profile repository ${e}`);
+
+      handlePrismaError(e, 'get user profile repository');
+    }
+  }
 
   async createBookingStatusLog(
     bookingStatusLogEnity: BookingStatusLogEntity,

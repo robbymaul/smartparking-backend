@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PlaceEntity } from '../../entities/places.entity';
+import {
+  mapToOperatingHourDtoResponse,
+  OperatingHourDtoResponse,
+} from './operating.hour.dto';
+import {
+  mapToTariffPlanDtoResponse,
+  TariffPlanDtoResponse,
+} from './tariff.plan.dto';
 
 export class PlaceResponseDto {
   @ApiProperty({ example: 1 })
@@ -7,6 +15,12 @@ export class PlaceResponseDto {
 
   @ApiProperty({ example: 'Mall Central Park' })
   name: string;
+
+  @ApiProperty({
+    example:
+      'https://res.cloudinary.com/dxdtxld4f/image/upload/v1738768682/skripsi/image_mall1_ixzb6u.jpg',
+  })
+  image: string;
 
   @ApiProperty({ example: 'mall' })
   placeType: string;
@@ -47,17 +61,19 @@ export class PlaceResponseDto {
   // @ApiProperty({ type: [PlaceRatingDto], required: false })
   // placeRatings?: PlaceRatingDto[];
   //
-  // @ApiProperty({ type: [OperatingHourDto], required: false })
-  // operatingHours?: OperatingHourDto[];
-  //
-  // @ApiProperty({ type: [TariffPlanDto], required: false })
-  // tariffPlans?: TariffPlanDto[];
+  @ApiProperty({ type: [OperatingHourDtoResponse], required: false })
+  operatingHour?: OperatingHourDtoResponse[];
+
+  @ApiProperty({ type: [TariffPlanDtoResponse], required: false })
+  tariffPlan?: TariffPlanDtoResponse[];
 }
 
 export function mapToPlaceResponseDto(entity: PlaceEntity): PlaceResponseDto {
   return {
     id: entity.id,
     name: entity.name,
+    image:
+      'https://res.cloudinary.com/dxdtxld4f/image/upload/v1738768682/skripsi/image_mall1_ixzb6u.jpg',
     placeType: entity.placeType,
     address: entity.address,
     latitude: Number(entity.latitude),
@@ -76,16 +92,12 @@ export function mapToPlaceResponseDto(entity: PlaceEntity): PlaceResponseDto {
     //   createdAt: rating.createdAt,
     // })),
     //
-    // operatingHours: entity.operatingHours?.map((hour) => ({
-    //   day: hour.day,
-    //   openTime: hour.openTime,
-    //   closeTime: hour.closeTime,
-    // })),
-    //
-    // tariffPlans: entity.tariffPlans?.map((plan) => ({
-    //   name: plan.name,
-    //   rate: plan.rate,
-    //   unit: plan.unit,
-    // })),
+    operatingHour: entity.OperatingHour?.map((hour) =>
+      mapToOperatingHourDtoResponse(hour),
+    ),
+
+    tariffPlan: entity.TariffPlan?.map((plan) =>
+      mapToTariffPlanDtoResponse(plan),
+    ),
   };
 }
