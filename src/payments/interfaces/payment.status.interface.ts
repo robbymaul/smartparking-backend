@@ -2,6 +2,7 @@ export enum PaymentStatus {
   PENDING = 'pending', // Menunggu pembayaran
   PROCESSING = 'processing', // Sedang diproses
   SUCCESS = 'success', // Pembayaran berhasil
+  COMPLETED = 'completed', // Pembayaran gagal
   FAILED = 'failed', // Pembayaran gagal
   EXPIRED = 'expired', // Pembayaran kedaluwarsa
   REFUNDED = 'refunded', // Refund penuh

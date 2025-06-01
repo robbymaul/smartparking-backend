@@ -92,6 +92,8 @@ export interface IPaymentsRepository {
     payment: BookingPaymentEntity,
     CONFIRMED: BookingStatus,
   ): Promise<void>;
+
+  getListPaymentMethodRepository(): Promise<PaymentMethodEntity[]>;
 }
 
 @Injectable()
@@ -100,6 +102,24 @@ export class PaymentsRepository implements IPaymentsRepository {
     private readonly prismaService: PrismaService,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
   ) {}
+
+  async getListPaymentMethodRepository(): Promise<PaymentMethodEntity[]> {
+    try {
+      const paymentMethods = await this.prismaService.paymentMethod.findMany();
+
+      const result: PaymentMethodEntity[] = [];
+
+      paymentMethods.map((paymentMethod) =>
+        result.push(mapToPaymentMethodEntity({ paymentMethod: paymentMethod })),
+      );
+
+      return result;
+    } catch (e) {
+      this.logger.error(`get list payment method repository ${e}`);
+
+      handlePrismaError(e, 'get list payment method repository');
+    }
+  }
 
   async updateBookingCompletedStatusRepository(
     payment: BookingPaymentEntity,

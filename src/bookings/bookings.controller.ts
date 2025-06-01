@@ -23,7 +23,6 @@ import {
   WebSuccessResponse,
 } from '../common/constant/web.response';
 import {
-  BookingResponseDto,
   CreateBookingDto,
   CreateBookingResponseDto,
 } from './dto/create-booking.dto';
@@ -31,6 +30,7 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { BookingsService } from './bookings.service';
 import { JWTAuthorization } from '../common/decorators/auth.decorator';
+import { BookingResponseDto } from './dto/booking-response.dto';
 
 @Controller(CONFIG.HEADER_API)
 export class BookingsController {

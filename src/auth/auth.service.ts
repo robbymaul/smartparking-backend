@@ -695,7 +695,7 @@ export class AuthService {
         }
 
         // Generate OTP baru (6 digit angka)
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otp = Math.floor(10000 + Math.random() * 90000).toString();
         const expiryMinutes = CONFIG.PHONE_VERIFICATION_EXPIRY_MINUTES;
         const expiryTime = new Date();
         expiryTime.setMinutes(expiryTime.getMinutes() + expiryMinutes);
@@ -715,7 +715,12 @@ export class AuthService {
 
         // Kirim OTP via SMS
         // Pada implementasi asli, gunakan SMS service, contoh:
-        await this.notificationService.sendOtp(phoneNumber, otp);
+        await this.notificationService.sendOtp(
+          'login',
+          userEntity.username,
+          phoneNumber,
+          otp,
+        );
 
         this.logger.info(
           `[DEV ONLY] Phone verification OTP for ${phoneNumber}: ${otp}`,
@@ -819,7 +824,7 @@ export class AuthService {
         }
 
         // Generate OTP baru
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otp = Math.floor(10000 + Math.random() * 90000).toString();
         const expiryMinutes = CONFIG.FORGOT_PASSWORD_OTP_EXPIRY_MINUTES;
         const expiryTime = new Date();
         expiryTime.setMinutes(expiryTime.getMinutes() + expiryMinutes);
@@ -840,8 +845,12 @@ export class AuthService {
 
         // Kirim OTP via SMS
         // Gunakan pesan khusus untuk forgot password
-        const otpMessage = `[Smart Parking] Kode reset password Anda: ${otp}. Kode berlaku selama ${expiryMinutes} menit. Jangan berikan kode ini kepada siapapun.`;
-        await this.notificationService.sendMessage(phoneNumber, otpMessage);
+        await this.notificationService.sendOtp(
+          'reset-password',
+          userEntity.username,
+          phoneNumber,
+          otp,
+        );
 
         const newSystemLog = new SystemLogEntity({
           entityType: 'user',

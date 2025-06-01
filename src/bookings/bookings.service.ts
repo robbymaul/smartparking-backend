@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { IBookingsRepository } from './bookings.repository';
 import {
-  BookingResponseDto,
   CreateBookingDto,
   CreateBookingResponseDto,
 } from './dto/create-booking.dto';
@@ -24,6 +23,7 @@ import { SlotAvailabilityEntity } from '../entities/slot.availability.entity';
 import { PrismaClient } from 'generated/prisma';
 import { DateUtil } from '../common/utils/date.util';
 import { GeneratorsService } from '../common/utils/generators';
+import { BookingResponseDto } from './dto/booking-response.dto';
 
 @Injectable()
 export class BookingsService {
@@ -118,6 +118,11 @@ export class BookingsService {
             prisma,
             newBookingEntity,
           );
+
+        await this.bookingRepository.updateParkingSlotIsReservedRepository(
+          prisma,
+          bookingEntity,
+        );
 
         const newSlotAvailability = new SlotAvailabilityEntity({
           slotId: bookingEntity.slotId,

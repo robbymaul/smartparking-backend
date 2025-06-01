@@ -92,7 +92,10 @@ DATABASE_URL="postgresql://username:password@localhost:5432/smart_parking?schema
   npm install google-auth-library
   
 # Install Midtrans Client
-    npm install midtrans-client
+  npm install midtrans-client
+    
+# Install Twilio
+  npm install twilio
 ```
 
 # Struktur File Modul Booking

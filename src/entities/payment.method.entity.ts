@@ -6,7 +6,7 @@ export class PaymentMethodEntity {
   methodName: string;
   provider: string;
   methodType: string;
-  description?: string;
+  description: string | null;
   processingFeePercent: Decimal; // pakai Decimal jika perlu
   fixedFee: any;
   supportsRefunds: boolean;
@@ -19,7 +19,7 @@ export class PaymentMethodEntity {
     methodName: string;
     provider: string;
     methodType: string;
-    description?: string;
+    description: string | null;
     processingFeePercent: Decimal;
     fixedFee: any;
     supportsRefunds: boolean;
@@ -51,7 +51,7 @@ export function mapToPaymentMethodEntity(param: {
     methodName: paymentMethod.methodName,
     provider: paymentMethod.provider,
     methodType: paymentMethod.methodType,
-    description: paymentMethod.description ?? undefined,
+    description: paymentMethod.description,
     processingFeePercent: paymentMethod.processingFeePercent,
     fixedFee: paymentMethod.fixedFee,
     supportsRefunds: paymentMethod.supportsRefunds,
