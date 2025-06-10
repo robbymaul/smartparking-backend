@@ -4,11 +4,11 @@ import { IsNotEmpty, IsPhoneNumber, IsString, Length } from 'class-validator';
 export class VerifyPhoneRequestDto {
   @ApiProperty({
     description: 'Kode OTP untuk verifikasi nomor telepon',
-    example: '123456',
+    example: '12345',
   })
   @IsString()
   @IsNotEmpty()
-  @Length(6, 6)
+  @Length(5, 5)
   otp: string;
 }
 

@@ -32,6 +32,7 @@ import { ProcessPaymentDto } from './dto/process.payment.dto';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { PaymentsService } from './payments.service';
+import { PaymentMethodResponseDto } from './dto/save.payment.method.dto';
 
 @Controller(CONFIG.HEADER_API)
 export class PaymentsController {
@@ -158,6 +159,38 @@ export class PaymentsController {
       user,
       bookingId,
     );
+
+    return {
+      code: HttpStatus.OK,
+      status: true,
+      data: result,
+    };
+  }
+
+  @ApiOperation({ summary: 'get payment method as user' })
+  @ApiOkResponse({
+    schema: {
+      properties: {
+        code: { type: 'number', example: 200 },
+        status: { type: 'boolean', example: true },
+        data: {
+          $ref: getSchemaPath(PaymentMethodResponseDto),
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'check payment payment Bad Request',
+    type: WebErrorResponse,
+  })
+  @ApiBearerAuth()
+  @Get('/payments/method')
+  @HttpCode(HttpStatus.OK)
+  async listPaymentMethod(
+    @JWTAuthorization() user: any,
+  ): Promise<WebSuccessResponse<any>> {
+    const result = await this.paymentsService.getListPaymentMethodService(user);
 
     return {
       code: HttpStatus.OK,

@@ -40,11 +40,11 @@ export class VerifyForgotPasswordOtpRequestDto {
 
   @ApiProperty({
     description: 'Kode OTP yang diterima via SMS',
-    example: '123456',
+    example: '12345',
   })
   @IsString()
   @IsNotEmpty()
-  @Length(6, 6)
+  @Length(5, 5)
   otp: string;
 }
 

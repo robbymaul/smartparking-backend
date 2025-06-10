@@ -10,7 +10,10 @@ import { Logger } from 'winston';
 import { IPaymentsRepository } from './payments.repository';
 import { PaymentStatus } from './interfaces/payment.status.interface';
 import { v4 as uuidv4 } from 'uuid';
-import { SavePaymentMethodDto } from './dto/save.payment.method.dto';
+import {
+  PaymentMethodResponseDto,
+  SavePaymentMethodDto,
+} from './dto/save.payment.method.dto';
 import { UserPaymentMethodEntity } from '../entities/user.payment.method.entity';
 import { BookingPaymentEntity } from '../entities/booking.payment.entity';
 import Decimal from 'decimal.js';
@@ -162,6 +165,7 @@ export class PaymentsService {
       token: paymentResult.token,
       bookingId: bookingId,
       amount: bookingEntity.estimatedPrice,
+      expiredAt: paymentResult.expiredAt,
     };
   }
 
@@ -217,8 +221,8 @@ export class PaymentsService {
     }
 
     if (
-      bookingPaymentEntity.paymentStatus == PaymentStatus.PENDING ||
-      bookingPaymentEntity.paymentStatus == PaymentStatus.PROCESSING
+      bookingPaymentEntity.paymentStatus != PaymentStatus.COMPLETED &&
+      bookingPaymentEntity.paymentStatus != PaymentStatus.FAILED
     ) {
       const statusResult = await this.midtransGateway.checkTransactionStatus(
         bookingPaymentEntity.paymentReference || '',
@@ -230,8 +234,8 @@ export class PaymentsService {
         const newStatus =
           statusResult.transactionStatus === 'settlement' ||
           statusResult.transactionStatus === 'capture'
-            ? 'COMPLETED'
-            : 'FAILED';
+            ? PaymentStatus.COMPLETED
+            : PaymentStatus.FAILED;
 
         bookingPaymentEntity.paymentStatus = newStatus;
 
@@ -240,7 +244,7 @@ export class PaymentsService {
         );
 
         // Update booking status jika pembayaran berhasil
-        if (newStatus === 'COMPLETED') {
+        if (newStatus === PaymentStatus.COMPLETED) {
           bookingEntity.bookingStatus = BookingStatus.CONFIRMED;
           await this.paymentRepository.updateBookingRepository(bookingEntity);
 
@@ -261,6 +265,25 @@ export class PaymentsService {
       amount: bookingPaymentEntity.finalAmount,
       paymentReference: bookingPaymentEntity.paymentReference,
     };
+  }
+
+  async getListPaymentMethodService(
+    user: any,
+  ): Promise<PaymentMethodResponseDto[]> {
+    const paymentMethodEntities =
+      await this.paymentRepository.getListPaymentMethodRepository();
+
+    const response: PaymentMethodResponseDto[] = [];
+    paymentMethodEntities.map((paymentMethod) =>
+      response.push({
+        description: paymentMethod.description ?? '',
+        id: paymentMethod.id,
+        methodName: paymentMethod.methodName,
+        methodType: paymentMethod.methodType,
+        provider: paymentMethod.provider,
+      }),
+    );
+    return response;
   }
 
   private async savePaymentMethod(

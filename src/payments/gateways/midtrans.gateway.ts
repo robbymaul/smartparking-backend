@@ -5,6 +5,7 @@ import axios from 'axios';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { IBookingsRepository } from '../../bookings/bookings.repository';
+import { PaymentStatus } from '../interfaces/payment.status.interface';
 
 @Injectable()
 export class MidtransGateway {
@@ -133,6 +134,7 @@ export class MidtransGateway {
         token: response.data.token,
         transactionId: response.data.transaction_id || null,
         gatewayResponse: response.data,
+        expiredAt: response.data.expired_at,
       };
     } catch (e) {
       this.logger.error(
@@ -165,18 +167,13 @@ export class MidtransGateway {
       switch (notification.transaction_status) {
         case 'capture':
         case 'settlement':
-          paymentStatus = 'COMPLETED';
+          paymentStatus = PaymentStatus.COMPLETED;
           break;
         case 'pending':
-          paymentStatus = 'PENDING';
-          break;
-        case 'deny':
-        case 'cancel':
-        case 'expire':
-          paymentStatus = 'FAILED';
+          paymentStatus = PaymentStatus.PENDING;
           break;
         default:
-          paymentStatus = 'UNKNOWN';
+          paymentStatus = PaymentStatus.FAILED;
       }
 
       return {

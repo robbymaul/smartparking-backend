@@ -53,3 +53,46 @@ export class SavePaymentMethodDto {
   @IsBoolean()
   isDefault?: boolean;
 }
+
+export class PaymentMethodResponseDto {
+  @ApiProperty({
+    description: 'ID metode pembayaran (jenis)',
+    example: 1,
+  })
+  @IsInt()
+  @Min(1)
+  @IsNotEmpty()
+  id: number;
+
+  @ApiProperty({
+    description: 'name payment method',
+    example: 'ovo',
+  })
+  @IsString()
+  @IsNotEmpty()
+  methodName: string;
+
+  @ApiProperty({
+    description: 'provider payment method',
+    example: 'ovo',
+  })
+  @IsString()
+  @IsNotEmpty()
+  provider: string;
+
+  @ApiProperty({
+    description: 'methodType payment method',
+    example: 'e-wallet',
+  })
+  @IsString()
+  @IsNotEmpty()
+  methodType: string;
+
+  @ApiProperty({
+    description: 'description payment method',
+    example: 'Pembayaran melalui OVO via Midtrans',
+  })
+  @IsString()
+  @IsNotEmpty()
+  description: string;
+}

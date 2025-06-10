@@ -80,6 +80,11 @@ export interface IBookingsRepository {
   getBookingByIdRepository(bookingId: number): Promise<BookingEntity | null>;
 
   updateBookingQRCodeRepository(bookingEntity: BookingEntity): Promise<void>;
+
+  updateParkingSlotIsReservedRepository(
+    prisma: PrismaClient,
+    bookingEntity: BookingEntity,
+  ): Promise<void>;
 }
 
 @Injectable()
@@ -88,6 +93,25 @@ export class BookingsRepository implements IBookingsRepository {
     private readonly prismaService: PrismaService,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
   ) {}
+
+  async updateParkingSlotIsReservedRepository(
+    prisma: PrismaClient,
+    bookingEntity: BookingEntity,
+  ): Promise<void> {
+    try {
+      await prisma.parkingSlot.update({
+        where: { id: bookingEntity.slotId },
+        data: {
+          isReserved: true,
+          updatedAt: new Date(),
+        },
+      });
+    } catch (e) {
+      this.logger.error(`update parking slot is reserved repository ${e}`);
+
+      handlePrismaError(e, 'update parking slot is reserved repository ');
+    }
+  }
 
   async updateBookingQRCodeRepository(
     bookingEntity: BookingEntity,
