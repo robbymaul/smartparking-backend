@@ -116,6 +116,7 @@ model Vehicle {
 model Place {
   id            Int       @id @default(autoincrement()) @map("place_id")
   name          String
+  image         String?
   placeType     String    @map("place_type")
   address       String
   latitude      Decimal?  @db.Decimal(10, 8)

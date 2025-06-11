@@ -95,6 +95,48 @@ export class GeneratorsService {
     }
   }
 
+  async generateStrongPassword(length: number = 12): Promise<string> {
+    const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lower = 'abcdefghijklmnopqrstuvwxyz';
+    const numbers = '0123456789';
+    const symbols = '!@#$%^&*()-_=+[]{}|;:,.<>?';
+
+    const all = upper + lower + numbers + symbols;
+
+    // Ensure at least one of each type
+    const getRandomChar = (charset: string) =>
+      charset[Math.floor(Math.random() * charset.length)];
+
+    const passwordChars = [
+      getRandomChar(upper),
+      getRandomChar(lower),
+      getRandomChar(numbers),
+      getRandomChar(symbols),
+    ];
+
+    // Fill the rest randomly
+    for (let i = passwordChars.length; i < length; i++) {
+      passwordChars.push(getRandomChar(all));
+    }
+
+    // Shuffle result
+    return passwordChars.sort(() => Math.random() - 0.5).join('');
+  }
+
+  async capitalizeWords(text: string): Promise<string> {
+    return text
+      .toLowerCase()
+      .split(' ')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
+
+  async getRandom9Digits(): Promise<string> {
+    return Math.floor(Math.random() * 1_000_000_000)
+      .toString()
+      .padStart(9, '0'); // memastikan panjangnya 9 digit
+  }
+
   private async uploadBufferToCloudinary(
     buffer: Buffer,
     options: any,

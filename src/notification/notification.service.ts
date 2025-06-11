@@ -4,6 +4,7 @@ import { Logger } from 'winston';
 import { CONFIG } from '../config/config.schema';
 import axios from 'axios';
 import qs from 'qs';
+import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class NotificationService {
@@ -13,6 +14,7 @@ export class NotificationService {
 
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
+    private readonly mailer: MailerService,
   ) {
     // const accountId = CONFIG.TWILIO_ACCOUNT_SID;
     // const authToken = CONFIG.TWILIO_AUTH_TOKEN;
@@ -126,6 +128,53 @@ export class NotificationService {
     \n
     Abaikan Jika Anda Tidak Melakukan Reset Password.
     `;
+  }
+
+  async sendRegisterInfoEmail(
+    username: string,
+    email: string,
+    registrationDate: any,
+    password: string,
+  ): Promise<void> {
+    this.logger.info(
+      `send register info email: ${email}, password: ${password}`,
+    );
+
+    try {
+      await this.mailer.sendMail({
+        to: email,
+        subject: 'register place smart parking',
+        template: 'admin-register',
+        context: {
+          userName: username,
+          userEmail: email,
+          registrationDate: registrationDate,
+          password: password,
+        },
+      });
+    } catch (e) {
+      this.logger.error(`error send register info email ${e}`);
+    }
+  }
+
+  async sendActivationInfoEmail(
+    username: string,
+    email: string,
+    url: string,
+  ): Promise<void> {
+    try {
+      await this.mailer.sendMail({
+        to: email,
+        subject: 'activation info',
+        template: 'admin-activation',
+        context: {
+          username: username,
+          activationUrl: url,
+        },
+      });
+    } catch (e) {
+      this.logger.error(`send actiation info email: ${email}, email: ${url}`);
+    }
   }
 
   private messageOtpDefault(username: string, otp: string): string {

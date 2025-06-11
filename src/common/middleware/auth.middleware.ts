@@ -16,6 +16,7 @@ import {
   HeaderAuthorizationDto,
 } from './middleware.dto';
 import { AccountType } from '../../auth/interface/acount.type';
+import { RoleAdmin } from '../../admin/enum/role.enum';
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
@@ -128,6 +129,116 @@ export class AuthMiddleware implements NestMiddleware {
       this.logger.warn(`Authentication request token invalid ${error}`);
 
       throw new UnauthorizedException('User tidak valid atau tidak aktif');
+    }
+  }
+
+  private getAuthorizationHeaderValue = async (
+    req: any,
+    header: string,
+  ): Promise<HeaderAuthorizationDto> => {
+    this.logger.debug(`get authorization header value ${header}`);
+    const getHeader = req.headers[header] as string;
+    this.logger.debug(`get authorization header value ${getHeader}`);
+    if (!getHeader || getHeader === '') {
+      throw new UnauthorizedException('Unauthorized');
+    }
+
+    const _value = getHeader.split(' ');
+    if (_value.length != 2) {
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    }
+
+    return {
+      header: _value[0],
+      value: _value[1],
+    };
+  };
+
+  private getValueBasicAuth = async (
+    value: string,
+  ): Promise<BasicAuthorizationDto> => {
+    const decode = Buffer.from(value, 'base64').toString('utf-8');
+    const [username, password] = decode.split(':');
+    return {
+      username: username,
+      password: password,
+    };
+  };
+}
+
+@Injectable()
+export class AuthAdminMiddleware implements NestMiddleware {
+  constructor(
+    private readonly jwtService: JwtService,
+    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
+    private readonly prismaService: PrismaService,
+  ) {}
+
+  async use(req: any, res: any, next: (error?: any) => void) {
+    const excludedPaths = ['/api/v1/payments/midtrans/callback']; // kamu bisa tambahkan lebih dari satu path
+    if (excludedPaths.includes(req.path)) {
+      return next(); // skip middleware
+    }
+
+    this.logger.debug('middleware for request authentication');
+    const authType = await this.getAuthorizationHeaderValue(
+      req,
+      Authorization.AUTHORIZATION,
+    );
+
+    if (authType.header === Authorization.BASIC_AUTH_TYPE) {
+      this.logger.debug(`authentication header value ${authType.header}`);
+      req.basicauth = await this.getValueBasicAuth(authType.value);
+      return next();
+    }
+
+    if (authType.header === Authorization.BEARER_AUTH_TYPE) {
+      this.logger.debug(`authentication header value ${authType.header}`);
+      req.admin = await this.validateToken(authType.value);
+      return next();
+    }
+
+    throw new UnauthorizedException('Unauthorized');
+  }
+
+  private async validateToken(token: string) {
+    try {
+      this.logger.debug(`Authentication request token valid: ${token}`);
+      const decode: any = await this.jwtService.verifyAsync(token);
+
+      this.logger.info(`authorization fetching admin from database`);
+      const admin = await this.prismaService.placeAdmin.findUnique({
+        where: {
+          id: decode.sub,
+        },
+      });
+
+      if (!admin || !admin.isActive) {
+        throw new UnauthorizedException('admin tidak valid atau tidak aktif');
+      }
+
+      let roles: string[] = [];
+      if (admin.role == RoleAdmin.MASTER) {
+        roles.push('master');
+      }
+
+      if (admin.role == RoleAdmin.ADMIN) {
+        roles.push('admin');
+      }
+
+      return {
+        id: admin.id,
+        placeId: admin.placeId,
+        username: admin.username,
+        fullName: admin.fullName,
+        email: admin.email,
+        contactNumber: admin.contactNumber,
+        roles: roles,
+      };
+    } catch (error) {
+      this.logger.warn(`Authentication request token invalid ${error}`);
+
+      throw new UnauthorizedException('Admin tidak valid atau tidak aktif');
     }
   }
 

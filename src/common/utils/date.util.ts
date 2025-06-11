@@ -66,4 +66,9 @@ export const DateUtil = {
   fakeUTCFromLocalNow(): Date {
     return DateTime.now().setZone(DEFAULT_TZ).toUTC().toJSDate();
   },
+
+  toISOTimeOnly(time: string): Date {
+    // Misal input "08:00:00"
+    return new Date(`1970-01-01T${time}Z`);
+  },
 };

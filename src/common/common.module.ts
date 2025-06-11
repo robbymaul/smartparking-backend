@@ -4,10 +4,17 @@ import { WinstonModule } from 'nest-winston/dist/winston.module';
 import { CONFIG } from '../config/config.schema';
 import { JwtModule } from '@nestjs/jwt';
 import { ValidationService } from './validation.service';
-import { AuthMiddleware } from './middleware/auth.middleware';
+import {
+  AuthAdminMiddleware,
+  AuthMiddleware,
+} from './middleware/auth.middleware';
 import * as winston from 'winston';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './guards/roles.guard';
+import { GeneratorsService } from './utils/generators';
+import { MailerModule } from '@nestjs-modules/mailer';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
+import * as path from 'node:path';
 
 @Global()
 @Module({
@@ -31,6 +38,27 @@ import { RolesGuard } from './guards/roles.guard';
         },
       }),
     }),
+    MailerModule.forRoot({
+      transport: {
+        host: `smtp.gmail.com`,
+        port: 587,
+        secure: false,
+        auth: {
+          user: CONFIG.EMAIL_NOTIFICATION_USER,
+          pass: CONFIG.EMAIL_NOTIFICATION_PASS,
+        },
+      },
+      defaults: {
+        from: `"Smart Parking" <no-reply@smartparking.com>`,
+      },
+      template: {
+        dir: path.join(__dirname, '..', 'src', 'lib'),
+        adapter: new HandlebarsAdapter(),
+        options: {
+          strict: true,
+        },
+      },
+    }),
   ],
   providers: [
     {
@@ -38,12 +66,17 @@ import { RolesGuard } from './guards/roles.guard';
       useClass: RolesGuard,
     },
     ValidationService,
+    GeneratorsService,
   ],
-  exports: [ValidationService],
+  exports: [ValidationService, GeneratorsService],
 })
 export class CommonModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     const headerAPI = CONFIG.HEADER_API;
-    consumer.apply(AuthMiddleware).forRoutes(`${headerAPI}/*`);
+    consumer
+      .apply(AuthMiddleware)
+      .exclude(`${headerAPI}/admins/*`)
+      .forRoutes(`${headerAPI}/*`);
+    consumer.apply(AuthAdminMiddleware).forRoutes(`${headerAPI}/admins/*`);
   }
 }

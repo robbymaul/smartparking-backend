@@ -183,6 +183,7 @@ exports.Prisma.VehicleScalarFieldEnum = {
 exports.Prisma.PlaceScalarFieldEnum = {
   id: 'id',
   name: 'name',
+  image: 'image',
   placeType: 'placeType',
   address: 'address',
   latitude: 'latitude',

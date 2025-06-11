@@ -19,7 +19,7 @@ export function mapToOperatingHourEntity(
 ): OperatingHourEntity {
   return new OperatingHourEntity({
     id: operatingHours.id,
-    placeId: operatingHours.id,
+    placeId: operatingHours.placeId,
     dayOfWeek: operatingHours.dayOfWeek,
     openingTime: operatingHours.openingTime,
     closingTime: operatingHours.closingTime,

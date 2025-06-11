@@ -9301,6 +9301,7 @@ export namespace Prisma {
   export type PlaceMinAggregateOutputType = {
     id: number | null
     name: string | null
+    image: string | null
     placeType: string | null
     address: string | null
     latitude: Decimal | null
@@ -9317,6 +9318,7 @@ export namespace Prisma {
   export type PlaceMaxAggregateOutputType = {
     id: number | null
     name: string | null
+    image: string | null
     placeType: string | null
     address: string | null
     latitude: Decimal | null
@@ -9333,6 +9335,7 @@ export namespace Prisma {
   export type PlaceCountAggregateOutputType = {
     id: number
     name: number
+    image: number
     placeType: number
     address: number
     latitude: number
@@ -9365,6 +9368,7 @@ export namespace Prisma {
   export type PlaceMinAggregateInputType = {
     id?: true
     name?: true
+    image?: true
     placeType?: true
     address?: true
     latitude?: true
@@ -9381,6 +9385,7 @@ export namespace Prisma {
   export type PlaceMaxAggregateInputType = {
     id?: true
     name?: true
+    image?: true
     placeType?: true
     address?: true
     latitude?: true
@@ -9397,6 +9402,7 @@ export namespace Prisma {
   export type PlaceCountAggregateInputType = {
     id?: true
     name?: true
+    image?: true
     placeType?: true
     address?: true
     latitude?: true
@@ -9500,6 +9506,7 @@ export namespace Prisma {
   export type PlaceGroupByOutputType = {
     id: number
     name: string
+    image: string | null
     placeType: string
     address: string
     latitude: Decimal | null
@@ -9535,6 +9542,7 @@ export namespace Prisma {
   export type PlaceSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     name?: boolean
+    image?: boolean
     placeType?: boolean
     address?: boolean
     latitude?: boolean
@@ -9558,6 +9566,7 @@ export namespace Prisma {
   export type PlaceSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     name?: boolean
+    image?: boolean
     placeType?: boolean
     address?: boolean
     latitude?: boolean
@@ -9574,6 +9583,7 @@ export namespace Prisma {
   export type PlaceSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     name?: boolean
+    image?: boolean
     placeType?: boolean
     address?: boolean
     latitude?: boolean
@@ -9590,6 +9600,7 @@ export namespace Prisma {
   export type PlaceSelectScalar = {
     id?: boolean
     name?: boolean
+    image?: boolean
     placeType?: boolean
     address?: boolean
     latitude?: boolean
@@ -9603,7 +9614,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type PlaceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "placeType" | "address" | "latitude" | "longitude" | "contactNumber" | "email" | "description" | "totalCapacity" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["place"]>
+  export type PlaceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "image" | "placeType" | "address" | "latitude" | "longitude" | "contactNumber" | "email" | "description" | "totalCapacity" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["place"]>
   export type PlaceInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     parkingZones?: boolean | Place$parkingZonesArgs<ExtArgs>
     tariffPlans?: boolean | Place$tariffPlansArgs<ExtArgs>
@@ -9629,6 +9640,7 @@ export namespace Prisma {
     scalars: $Extensions.GetPayloadResult<{
       id: number
       name: string
+      image: string | null
       placeType: string
       address: string
       latitude: Prisma.Decimal | null
@@ -10071,6 +10083,7 @@ export namespace Prisma {
   interface PlaceFieldRefs {
     readonly id: FieldRef<"Place", 'Int'>
     readonly name: FieldRef<"Place", 'String'>
+    readonly image: FieldRef<"Place", 'String'>
     readonly placeType: FieldRef<"Place", 'String'>
     readonly address: FieldRef<"Place", 'String'>
     readonly latitude: FieldRef<"Place", 'Decimal'>
@@ -41604,6 +41617,7 @@ export namespace Prisma {
   export const PlaceScalarFieldEnum: {
     id: 'id',
     name: 'name',
+    image: 'image',
     placeType: 'placeType',
     address: 'address',
     latitude: 'latitude',
@@ -42574,6 +42588,7 @@ export namespace Prisma {
     NOT?: PlaceWhereInput | PlaceWhereInput[]
     id?: IntFilter<"Place"> | number
     name?: StringFilter<"Place"> | string
+    image?: StringNullableFilter<"Place"> | string | null
     placeType?: StringFilter<"Place"> | string
     address?: StringFilter<"Place"> | string
     latitude?: DecimalNullableFilter<"Place"> | Decimal | DecimalJsLike | number | string | null
@@ -42596,6 +42611,7 @@ export namespace Prisma {
   export type PlaceOrderByWithRelationInput = {
     id?: SortOrder
     name?: SortOrder
+    image?: SortOrderInput | SortOrder
     placeType?: SortOrder
     address?: SortOrder
     latitude?: SortOrderInput | SortOrder
@@ -42621,6 +42637,7 @@ export namespace Prisma {
     OR?: PlaceWhereInput[]
     NOT?: PlaceWhereInput | PlaceWhereInput[]
     name?: StringFilter<"Place"> | string
+    image?: StringNullableFilter<"Place"> | string | null
     placeType?: StringFilter<"Place"> | string
     address?: StringFilter<"Place"> | string
     latitude?: DecimalNullableFilter<"Place"> | Decimal | DecimalJsLike | number | string | null
@@ -42643,6 +42660,7 @@ export namespace Prisma {
   export type PlaceOrderByWithAggregationInput = {
     id?: SortOrder
     name?: SortOrder
+    image?: SortOrderInput | SortOrder
     placeType?: SortOrder
     address?: SortOrder
     latitude?: SortOrderInput | SortOrder
@@ -42667,6 +42685,7 @@ export namespace Prisma {
     NOT?: PlaceScalarWhereWithAggregatesInput | PlaceScalarWhereWithAggregatesInput[]
     id?: IntWithAggregatesFilter<"Place"> | number
     name?: StringWithAggregatesFilter<"Place"> | string
+    image?: StringNullableWithAggregatesFilter<"Place"> | string | null
     placeType?: StringWithAggregatesFilter<"Place"> | string
     address?: StringWithAggregatesFilter<"Place"> | string
     latitude?: DecimalNullableWithAggregatesFilter<"Place"> | Decimal | DecimalJsLike | number | string | null
@@ -45384,6 +45403,7 @@ export namespace Prisma {
 
   export type PlaceCreateInput = {
     name: string
+    image?: string | null
     placeType: string
     address: string
     latitude?: Decimal | DecimalJsLike | number | string | null
@@ -45406,6 +45426,7 @@ export namespace Prisma {
   export type PlaceUncheckedCreateInput = {
     id?: number
     name: string
+    image?: string | null
     placeType: string
     address: string
     latitude?: Decimal | DecimalJsLike | number | string | null
@@ -45427,6 +45448,7 @@ export namespace Prisma {
 
   export type PlaceUpdateInput = {
     name?: StringFieldUpdateOperationsInput | string
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     placeType?: StringFieldUpdateOperationsInput | string
     address?: StringFieldUpdateOperationsInput | string
     latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -45449,6 +45471,7 @@ export namespace Prisma {
   export type PlaceUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     placeType?: StringFieldUpdateOperationsInput | string
     address?: StringFieldUpdateOperationsInput | string
     latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -45471,6 +45494,7 @@ export namespace Prisma {
   export type PlaceCreateManyInput = {
     id?: number
     name: string
+    image?: string | null
     placeType: string
     address: string
     latitude?: Decimal | DecimalJsLike | number | string | null
@@ -45486,6 +45510,7 @@ export namespace Prisma {
 
   export type PlaceUpdateManyMutationInput = {
     name?: StringFieldUpdateOperationsInput | string
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     placeType?: StringFieldUpdateOperationsInput | string
     address?: StringFieldUpdateOperationsInput | string
     latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -45502,6 +45527,7 @@ export namespace Prisma {
   export type PlaceUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     placeType?: StringFieldUpdateOperationsInput | string
     address?: StringFieldUpdateOperationsInput | string
     latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -48445,6 +48471,7 @@ export namespace Prisma {
   export type PlaceCountOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
+    image?: SortOrder
     placeType?: SortOrder
     address?: SortOrder
     latitude?: SortOrder
@@ -48468,6 +48495,7 @@ export namespace Prisma {
   export type PlaceMaxOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
+    image?: SortOrder
     placeType?: SortOrder
     address?: SortOrder
     latitude?: SortOrder
@@ -48484,6 +48512,7 @@ export namespace Prisma {
   export type PlaceMinOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
+    image?: SortOrder
     placeType?: SortOrder
     address?: SortOrder
     latitude?: SortOrder
@@ -53981,6 +54010,7 @@ export namespace Prisma {
 
   export type PlaceCreateWithoutParkingZonesInput = {
     name: string
+    image?: string | null
     placeType: string
     address: string
     latitude?: Decimal | DecimalJsLike | number | string | null
@@ -54002,6 +54032,7 @@ export namespace Prisma {
   export type PlaceUncheckedCreateWithoutParkingZonesInput = {
     id?: number
     name: string
+    image?: string | null
     placeType: string
     address: string
     latitude?: Decimal | DecimalJsLike | number | string | null
@@ -54077,6 +54108,7 @@ export namespace Prisma {
 
   export type PlaceUpdateWithoutParkingZonesInput = {
     name?: StringFieldUpdateOperationsInput | string
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     placeType?: StringFieldUpdateOperationsInput | string
     address?: StringFieldUpdateOperationsInput | string
     latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -54098,6 +54130,7 @@ export namespace Prisma {
   export type PlaceUncheckedUpdateWithoutParkingZonesInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     placeType?: StringFieldUpdateOperationsInput | string
     address?: StringFieldUpdateOperationsInput | string
     latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -54425,6 +54458,7 @@ export namespace Prisma {
 
   export type PlaceCreateWithoutTariffPlansInput = {
     name: string
+    image?: string | null
     placeType: string
     address: string
     latitude?: Decimal | DecimalJsLike | number | string | null
@@ -54446,6 +54480,7 @@ export namespace Prisma {
   export type PlaceUncheckedCreateWithoutTariffPlansInput = {
     id?: number
     name: string
+    image?: string | null
     placeType: string
     address: string
     latitude?: Decimal | DecimalJsLike | number | string | null
@@ -54523,6 +54558,7 @@ export namespace Prisma {
 
   export type PlaceUpdateWithoutTariffPlansInput = {
     name?: StringFieldUpdateOperationsInput | string
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     placeType?: StringFieldUpdateOperationsInput | string
     address?: StringFieldUpdateOperationsInput | string
     latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -54544,6 +54580,7 @@ export namespace Prisma {
   export type PlaceUncheckedUpdateWithoutTariffPlansInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     placeType?: StringFieldUpdateOperationsInput | string
     address?: StringFieldUpdateOperationsInput | string
     latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -56512,6 +56549,7 @@ export namespace Prisma {
 
   export type PlaceCreateWithoutParkingPassesInput = {
     name: string
+    image?: string | null
     placeType: string
     address: string
     latitude?: Decimal | DecimalJsLike | number | string | null
@@ -56533,6 +56571,7 @@ export namespace Prisma {
   export type PlaceUncheckedCreateWithoutParkingPassesInput = {
     id?: number
     name: string
+    image?: string | null
     placeType: string
     address: string
     latitude?: Decimal | DecimalJsLike | number | string | null
@@ -56664,6 +56703,7 @@ export namespace Prisma {
 
   export type PlaceUpdateWithoutParkingPassesInput = {
     name?: StringFieldUpdateOperationsInput | string
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     placeType?: StringFieldUpdateOperationsInput | string
     address?: StringFieldUpdateOperationsInput | string
     latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -56685,6 +56725,7 @@ export namespace Prisma {
   export type PlaceUncheckedUpdateWithoutParkingPassesInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     placeType?: StringFieldUpdateOperationsInput | string
     address?: StringFieldUpdateOperationsInput | string
     latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -57483,6 +57524,7 @@ export namespace Prisma {
 
   export type PlaceCreateWithoutPlaceRatingsInput = {
     name: string
+    image?: string | null
     placeType: string
     address: string
     latitude?: Decimal | DecimalJsLike | number | string | null
@@ -57504,6 +57546,7 @@ export namespace Prisma {
   export type PlaceUncheckedCreateWithoutPlaceRatingsInput = {
     id?: number
     name: string
+    image?: string | null
     placeType: string
     address: string
     latitude?: Decimal | DecimalJsLike | number | string | null
@@ -57656,6 +57699,7 @@ export namespace Prisma {
 
   export type PlaceUpdateWithoutPlaceRatingsInput = {
     name?: StringFieldUpdateOperationsInput | string
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     placeType?: StringFieldUpdateOperationsInput | string
     address?: StringFieldUpdateOperationsInput | string
     latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -57677,6 +57721,7 @@ export namespace Prisma {
   export type PlaceUncheckedUpdateWithoutPlaceRatingsInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     placeType?: StringFieldUpdateOperationsInput | string
     address?: StringFieldUpdateOperationsInput | string
     latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -57825,6 +57870,7 @@ export namespace Prisma {
 
   export type PlaceCreateWithoutOperatingHoursInput = {
     name: string
+    image?: string | null
     placeType: string
     address: string
     latitude?: Decimal | DecimalJsLike | number | string | null
@@ -57846,6 +57892,7 @@ export namespace Prisma {
   export type PlaceUncheckedCreateWithoutOperatingHoursInput = {
     id?: number
     name: string
+    image?: string | null
     placeType: string
     address: string
     latitude?: Decimal | DecimalJsLike | number | string | null
@@ -57882,6 +57929,7 @@ export namespace Prisma {
 
   export type PlaceUpdateWithoutOperatingHoursInput = {
     name?: StringFieldUpdateOperationsInput | string
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     placeType?: StringFieldUpdateOperationsInput | string
     address?: StringFieldUpdateOperationsInput | string
     latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -57903,6 +57951,7 @@ export namespace Prisma {
   export type PlaceUncheckedUpdateWithoutOperatingHoursInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     placeType?: StringFieldUpdateOperationsInput | string
     address?: StringFieldUpdateOperationsInput | string
     latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -57923,6 +57972,7 @@ export namespace Prisma {
 
   export type PlaceCreateWithoutPlaceAdminsInput = {
     name: string
+    image?: string | null
     placeType: string
     address: string
     latitude?: Decimal | DecimalJsLike | number | string | null
@@ -57944,6 +57994,7 @@ export namespace Prisma {
   export type PlaceUncheckedCreateWithoutPlaceAdminsInput = {
     id?: number
     name: string
+    image?: string | null
     placeType: string
     address: string
     latitude?: Decimal | DecimalJsLike | number | string | null
@@ -57980,6 +58031,7 @@ export namespace Prisma {
 
   export type PlaceUpdateWithoutPlaceAdminsInput = {
     name?: StringFieldUpdateOperationsInput | string
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     placeType?: StringFieldUpdateOperationsInput | string
     address?: StringFieldUpdateOperationsInput | string
     latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
@@ -58001,6 +58053,7 @@ export namespace Prisma {
   export type PlaceUncheckedUpdateWithoutPlaceAdminsInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     placeType?: StringFieldUpdateOperationsInput | string
     address?: StringFieldUpdateOperationsInput | string
     latitude?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null

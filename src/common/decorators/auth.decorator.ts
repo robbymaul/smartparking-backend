@@ -41,3 +41,16 @@ export const JWTAuthorization = createParamDecorator(
     return user;
   },
 );
+
+export const JWTAdminAuthorization = createParamDecorator(
+  (data: unknown, context: ExecutionContext) => {
+    const request = context.switchToHttp().getRequest();
+
+    const admin = request.admin;
+    if (!admin) {
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    }
+
+    return admin;
+  },
+);

@@ -9,6 +9,7 @@ import { mapToTariffPlanEntity, TariffPlanEntity } from './tariff.plan.entity';
 export class PlaceEntity {
   id: number;
   name: string;
+  image: string | null;
   placeType: string;
   address: string;
   latitude: number | null;
@@ -73,6 +74,7 @@ export function mapToPlaceEntity(
   return new PlaceEntity({
     id: place.id,
     name: place.name,
+    image: place.image,
     placeType: place.placeType,
     address: place.address,
     latitude: place.latitude?.toNumber(),
