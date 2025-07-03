@@ -93,6 +93,8 @@ export class PlaceResponseDto {
 
   @ApiProperty({ type: [TariffPlanDtoResponse], required: false })
   tariffPlan?: TariffPlanDtoResponse[];
+
+  distance?: number;
 }
 
 export function mapToPlaceResponseDto(
@@ -140,6 +142,7 @@ export function mapToPlaceResponseDto(
     tariffPlan: placeEntity.TariffPlan?.map((plan) =>
       mapToTariffPlanDtoResponse(plan),
     ),
+    distance: placeEntity.distance,
   };
 }
 

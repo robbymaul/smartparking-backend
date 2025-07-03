@@ -26,6 +26,14 @@ import {
   mapToOperatingHourEntity,
   OperatingHourEntity,
 } from '../entities/operating.hours.entity';
+import {
+  mapToTariffPlanEntity,
+  TariffPlanEntity,
+} from '../entities/tariff.plan.entity';
+import { TariffRateEntity } from '../entities/tariff.rate.entity';
+import { BookingEntity, mapToBookingEntity } from '../entities/booking.entity';
+import { AccessLogEntity } from 'src/entities/access.log.entity';
+import { BookingStatusLogEntity } from '../entities/booking.status.log.entity';
 
 export interface IPlacesRepository {
   getListPlacesRepository(
@@ -34,6 +42,7 @@ export interface IPlacesRepository {
     search?: string,
     city?: string,
     area?: string,
+    type?: string,
   ): Promise<PlaceEntity[]>;
 
   getPlaceByIdRepository(id: number): Promise<PlaceEntity | null>;
@@ -93,6 +102,74 @@ export interface IPlacesRepository {
     prisma: PrismaClient,
     updateOperatingHour: OperatingHourEntity,
   ): Promise<void>;
+
+  insertParkingZoneRepository(
+    prisma: PrismaClient,
+    newParkingZone: ParkingZoneEntity,
+  ): Promise<ParkingZoneEntity>;
+
+  insertManyParkingSlotRepository(
+    prisma: PrismaClient,
+    parkingSlotEntities: ParkingSlotEntity[],
+  ): Promise<void>;
+
+  getParkingZonePlaceAdminRepository(
+    placeEntity: PlaceEntity,
+  ): Promise<ParkingZoneEntity[]>;
+
+  insertTariffPlanRepository(
+    prisma: PrismaClient,
+    newTariffPlanEntity: TariffPlanEntity,
+  ): Promise<TariffPlanEntity>;
+
+  insertManyTariffRateRepository(
+    prisma: PrismaClient,
+    tariffRateEntities: TariffRateEntity[],
+  ): Promise<void>;
+
+  getTariffPlanPlaceAdminRepository(
+    placeEntity: PlaceEntity,
+  ): Promise<TariffPlanEntity[]>;
+
+  getListParkingSlotByIdZoneAndIdSlotRepository(
+    idZone: number,
+    slotId: number,
+  ): Promise<ParkingSlotEntity | null>;
+
+  getBookingByBookingReferenceAndIdSlotRepository(
+    ref: string,
+    id: number,
+  ): Promise<BookingEntity | null>;
+
+  updateBookingEntryParkingRepository(
+    prisma: PrismaClient,
+    bookingEntity: BookingEntity,
+  ): Promise<BookingEntity>;
+
+  updateParkingSlotEntryParkingRepository(
+    prisma: PrismaClient,
+    updatedSlot: ParkingSlotEntity,
+  ): Promise<ParkingSlotEntity>;
+
+  insertAccessLogRepository(
+    prisma: PrismaClient,
+    accessLog: AccessLogEntity,
+  ): Promise<void>;
+
+  insertBookingStatusLogRepository(
+    prisma: PrismaClient,
+    bookingStatusLog: BookingStatusLogEntity,
+  ): Promise<void>;
+
+  updateBookingExitParkingRepository(
+    prisma: PrismaClient,
+    bookingEntity: BookingEntity,
+  ): Promise<BookingEntity>;
+
+  updateParkingSlotExitParkingRepository(
+    prisma: PrismaClient,
+    parkingSlotEntity: ParkingSlotEntity,
+  ): Promise<ParkingSlotEntity>;
 }
 
 @Injectable()
@@ -101,6 +178,397 @@ export class PlacesRepository implements IPlacesRepository {
     private readonly prismaService: PrismaService,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
   ) {}
+
+  async updateParkingSlotExitParkingRepository(
+    prisma: PrismaClient,
+    updatedSlot: ParkingSlotEntity,
+  ): Promise<ParkingSlotEntity> {
+    try {
+      const parkingSlot = await prisma.parkingSlot.update({
+        where: {
+          id: updatedSlot.id,
+        },
+        data: {
+          isReserved: updatedSlot.isReserved,
+          isOccupied: updatedSlot.isOccupied,
+          updatedAt: updatedSlot.updatedAt,
+        },
+      });
+
+      return mapToParkingSlotEntity({ slot: parkingSlot });
+    } catch (e) {
+      this.logger.error(
+        `update parking slot exit parking place admin repository ${e}`,
+      );
+
+      handlePrismaError(
+        e,
+        'update parking slot exit parking place admin repository',
+      );
+    }
+  }
+
+  async updateBookingExitParkingRepository(
+    prisma: PrismaClient,
+    bookingEntity: BookingEntity,
+  ): Promise<BookingEntity> {
+    try {
+      const booking = await prisma.booking.update({
+        where: {
+          id: bookingEntity.id,
+        },
+        data: {
+          actualExit: bookingEntity.actualExit,
+          bookingStatus: bookingEntity.bookingStatus,
+          finalPrice: bookingEntity.finalPrice,
+          updatedAt: bookingEntity.updatedAt,
+        },
+      });
+
+      return mapToBookingEntity({ booking: booking });
+    } catch (e) {
+      this.logger.error(
+        `update booking exit parking place admin repository ${e}`,
+      );
+
+      handlePrismaError(
+        e,
+        'update booking exit parking place admin repository',
+      );
+    }
+  }
+
+  async insertBookingStatusLogRepository(
+    prisma: PrismaClient,
+    bookingStatusLog: BookingStatusLogEntity,
+  ): Promise<void> {
+    try {
+      await prisma.bookingStatusLog.create({
+        data: {
+          bookingId: bookingStatusLog.bookingId,
+          previousStatus: bookingStatusLog.previousStatus,
+          newStatus: bookingStatusLog.newStatus,
+          changedBy: bookingStatusLog.changedBy,
+          reason: bookingStatusLog.reason,
+          statusTime: bookingStatusLog.statusTime,
+        },
+      });
+    } catch (e) {
+      this.logger.error(
+        `insert booking status log entry parking place admin repository ${e}`,
+      );
+
+      handlePrismaError(
+        e,
+        'insert booking status log entry parking place admin repository',
+      );
+    }
+  }
+
+  async insertAccessLogRepository(
+    prisma: PrismaClient,
+    accessLog: AccessLogEntity,
+  ): Promise<void> {
+    try {
+      await prisma.accessLog.create({
+        data: {
+          bookingId: accessLog.bookingId,
+          logType: accessLog.logType,
+          logTime: accessLog.logTime,
+          verificationMethod: accessLog.verificationMethod,
+          verifiedBy: accessLog.verifiedBy,
+          location: accessLog.location,
+          notes: accessLog.notes,
+          createdAt: accessLog.createdAt,
+        },
+      });
+    } catch (e) {
+      this.logger.error(
+        `insert access log entry parking place admin repository ${e}`,
+      );
+
+      handlePrismaError(
+        e,
+        'insert access log entry parking place admin repository',
+      );
+    }
+  }
+
+  async updateParkingSlotEntryParkingRepository(
+    prisma: PrismaClient,
+    updatedSlot: ParkingSlotEntity,
+  ): Promise<ParkingSlotEntity> {
+    try {
+      const parkingSlot = await prisma.parkingSlot.update({
+        where: {
+          id: updatedSlot.id,
+        },
+        data: {
+          isReserved: updatedSlot.isReserved,
+          isOccupied: updatedSlot.isOccupied,
+          updatedAt: updatedSlot.updatedAt,
+        },
+      });
+
+      return mapToParkingSlotEntity({ slot: parkingSlot });
+    } catch (e) {
+      this.logger.error(
+        `update parking slot entry parking place admin repository ${e}`,
+      );
+
+      handlePrismaError(
+        e,
+        'update parking slot entry parking place admin repository',
+      );
+    }
+  }
+
+  async updateBookingEntryParkingRepository(
+    prisma: PrismaClient,
+    bookingEntity: BookingEntity,
+  ): Promise<BookingEntity> {
+    try {
+      const booking = await prisma.booking.update({
+        where: {
+          id: bookingEntity.id,
+        },
+        data: {
+          actualEntry: bookingEntity.actualEntry,
+          bookingStatus: bookingEntity.bookingStatus,
+          updatedAt: bookingEntity.updatedAt,
+        },
+      });
+
+      return mapToBookingEntity({ booking: booking });
+    } catch (e) {
+      this.logger.error(
+        `update booking entry parking place admin repository ${e}`,
+      );
+
+      handlePrismaError(
+        e,
+        'update booking entry parking place admin repository',
+      );
+    }
+  }
+
+  async getBookingByBookingReferenceAndIdSlotRepository(
+    ref: string,
+    slotId: number,
+  ): Promise<BookingEntity | null> {
+    try {
+      const booking = await this.prismaService.booking.findFirst({
+        where: {
+          bookingReference: ref,
+          slotId: slotId,
+        },
+        include: {
+          user: {
+            include: {
+              profile: true,
+            },
+          },
+          vehicle: true,
+          parkingSlot: true,
+        },
+      });
+
+      return booking
+        ? mapToBookingEntity({
+            booking: booking,
+            slot: booking.parkingSlot,
+            vehicle: booking.vehicle,
+            user: booking.user,
+            userProfile: booking.user.profile || undefined,
+          })
+        : null;
+    } catch (e) {
+      this.logger.error(
+        `get booking by booking reference and id slot place admin repository ${e}`,
+      );
+
+      handlePrismaError(
+        e,
+        'get booking by booking reference and id slot place admin repository',
+      );
+    }
+  }
+
+  async getListParkingSlotByIdZoneAndIdSlotRepository(
+    idZone: number,
+    slotId: number,
+  ): Promise<ParkingSlotEntity | null> {
+    try {
+      const parkingSlot = await this.prismaService.parkingSlot.findFirst({
+        where: {
+          id: slotId,
+          zoneId: idZone,
+          isActive: true,
+        },
+        include: {
+          bookings: {
+            include: {
+              vehicle: true,
+            },
+            orderBy: {
+              bookingTime: 'desc', // Urutkan dari yang terbaru
+            },
+          },
+          parkingZone: true,
+        },
+      });
+
+      return parkingSlot
+        ? mapToParkingSlotEntity({
+            slot: parkingSlot,
+            parkingZone: parkingSlot.parkingZone,
+          })
+        : null;
+    } catch (e) {
+      this.logger.error(
+        `get list parking slot by id zone and id slot place admin repository ${e}`,
+      );
+
+      handlePrismaError(
+        e,
+        'get list parking slot by id zone and id slot place admin repository',
+      );
+    }
+  }
+
+  async getTariffPlanPlaceAdminRepository(
+    placeEntity: PlaceEntity,
+  ): Promise<TariffPlanEntity[]> {
+    try {
+      const tariffPlan = await this.prismaService.tariffPlan.findMany({
+        where: {
+          placeId: placeEntity.id,
+        },
+        include: {
+          tariffRates: true,
+        },
+      });
+
+      return tariffPlan.map((value) => mapToTariffPlanEntity(value));
+    } catch (e) {
+      this.logger.error(`get tariff plan place admin repository ${e}`);
+
+      handlePrismaError(e, 'get tariff plan place admin repository');
+    }
+  }
+
+  async insertManyTariffRateRepository(
+    prisma: PrismaClient,
+    tariffRateEntities: TariffRateEntity[],
+  ): Promise<void> {
+    try {
+      const createData = tariffRateEntities.map(({ id, ...rest }) => rest);
+
+      await prisma.tariffRate.createMany({
+        data: createData,
+      });
+    } catch (e) {
+      this.logger.error(`insert many tariff rate repository ${e}`);
+
+      handlePrismaError(e, 'insert many tariff rate repository');
+    }
+  }
+
+  async insertTariffPlanRepository(
+    prisma: PrismaClient,
+    tariffPlanEntity: TariffPlanEntity,
+  ): Promise<TariffPlanEntity> {
+    try {
+      const tariffPlan = await prisma.tariffPlan.create({
+        data: {
+          placeId: tariffPlanEntity.placeId,
+          effectiveUntil: tariffPlanEntity.effectiveUntil,
+          effectiveFrom: tariffPlanEntity.effectiveFrom,
+          planName: tariffPlanEntity.planName,
+          isActive: true,
+          description: tariffPlanEntity.description,
+        },
+      });
+
+      return new TariffPlanEntity({
+        id: tariffPlan.id,
+        effectiveUntil: tariffPlan.effectiveUntil,
+        effectiveFrom: tariffPlan.effectiveFrom,
+        planName: tariffPlan.planName,
+        isActive: true,
+        description: tariffPlan.description,
+        placeId: tariffPlan.placeId,
+      });
+    } catch (e) {
+      this.logger.error(`insert tariff plan repository ${e}`);
+
+      handlePrismaError(e, 'insert tariff plan repository');
+    }
+  }
+
+  async getParkingZonePlaceAdminRepository(
+    placeEntity: PlaceEntity,
+  ): Promise<ParkingZoneEntity[]> {
+    try {
+      const parkingZones = await this.prismaService.parkingZone.findMany({
+        where: {
+          placeId: placeEntity.id,
+        },
+      });
+
+      return parkingZones.map((parkingZone) =>
+        mapToParkingZoneEntity(parkingZone),
+      );
+    } catch (e) {
+      this.logger.error(`get parking zone place admin repository ${e}`);
+
+      handlePrismaError(e, 'get parking zone place admin repository');
+    }
+  }
+
+  async insertManyParkingSlotRepository(
+    prisma: PrismaClient,
+    parkingSlotEntities: ParkingSlotEntity[],
+  ): Promise<void> {
+    try {
+      const createData = parkingSlotEntities.map(({ id, ...rest }) => rest);
+      this.logger.debug(
+        `create data operating hours: ${JSON.stringify(createData)}`,
+      );
+
+      await prisma.parkingSlot.createMany({
+        data: createData,
+      });
+    } catch (e) {
+      this.logger.error(`insert many parking slot by admin repository ${e}`);
+
+      handlePrismaError(e, 'insert many parking slot by admin repository');
+    }
+  }
+
+  async insertParkingZoneRepository(
+    prisma: PrismaClient,
+    parkingZoneEntity: ParkingZoneEntity,
+  ): Promise<ParkingZoneEntity> {
+    try {
+      const parkingZone = await prisma.parkingZone.create({
+        data: {
+          placeId: parkingZoneEntity.placeId,
+          zoneName: parkingZoneEntity.zoneName,
+          floorLevel: parkingZoneEntity.floorLevel,
+          zoneType: parkingZoneEntity.zoneType,
+          totalSlots: parkingZoneEntity.totalSlots,
+          isActive: true,
+        },
+      });
+
+      return mapToParkingZoneEntity(parkingZone);
+    } catch (e) {
+      this.logger.error(`insert parking zone repository ${e}`);
+
+      handlePrismaError(e, 'insert parking zone repository');
+    }
+  }
 
   async updateOperatingHourRepository(
     prisma: PrismaClient,
@@ -225,7 +693,7 @@ export class PlacesRepository implements IPlacesRepository {
         },
       });
 
-      return places ? mapToPlaceEntity(places) : null;
+      return places ? mapToPlaceEntity({ place: places }) : null;
     } catch (e) {
       this.logger.error(`get place by admin repository ${e}`);
 
@@ -301,7 +769,7 @@ export class PlacesRepository implements IPlacesRepository {
         },
       });
 
-      return mapToPlaceEntity(place);
+      return mapToPlaceEntity({ place: place });
     } catch (e) {
       this.logger.error(`register place repository ${e}`);
 
@@ -409,17 +877,26 @@ export class PlacesRepository implements IPlacesRepository {
       const limit = 10;
 
       const rawPlaces = await this.prismaService.$queryRawUnsafe<any[]>(`
-          SELECT *
-          FROM (SELECT *,
-                       (
-                           6371000 * acos(
-                                   cos(radians(${latitude})) * cos(radians("latitude")) *
-                                   cos(radians("longitude") - radians(${longitude}))
-                                       + sin(radians(${latitude})) * sin(radians("latitude"))
-                                     )
-                           ) AS distance
-                FROM "places") AS subquery
-          WHERE distance <= ${radius}
+          SELECT place_id AS id, name, place_type AS "placeType", address,
+                 latitude, longitude, contact_number AS "contactNumber",
+                 email, description, total_capacity AS "totalCapacity",
+                 is_active AS "isActive", created_at AS "createdAt",
+                 updated_at AS "updatedAt",
+                 (
+                     6371000 * acos(
+                             cos(radians(${latitude})) * cos(radians(latitude)) *
+                             cos(radians(longitude) - radians(${longitude})) +
+                             sin(radians(${latitude})) * sin(radians(latitude))
+                               )
+                     ) AS distance
+          FROM "places"
+          WHERE (
+                    6371000 * acos(
+                            cos(radians(${latitude})) * cos(radians(latitude)) *
+                            cos(radians(longitude) - radians(${longitude})) +
+                            sin(radians(${latitude})) * sin(radians(latitude))
+                              )
+                    ) <= ${radius}
           ORDER BY distance
               LIMIT ${limit}
       `);
@@ -434,7 +911,11 @@ export class PlacesRepository implements IPlacesRepository {
       //   }),
       // );
 
-      return rawPlaces.map((place: any) => mapToPlaceEntity(place));
+      this.logger.debug(`places see distance ${JSON.stringify(rawPlaces)}`);
+
+      return rawPlaces.map((place: any) =>
+        mapToPlaceEntity({ place: place, distance: place.distance }),
+      );
     } catch (e) {
       this.logger.error(`get places nearby repository ${e}`);
 
@@ -466,7 +947,11 @@ export class PlacesRepository implements IPlacesRepository {
       });
 
       return places
-        ? mapToPlaceEntity(places, places.operatingHours, places.tariffPlans)
+        ? mapToPlaceEntity({
+            place: places,
+            operatingHours: places.operatingHours,
+            tariffPlans: places.tariffPlans,
+          })
         : null;
     } catch (e) {
       this.logger.error(`get detail places repository ${e}`);
@@ -481,6 +966,7 @@ export class PlacesRepository implements IPlacesRepository {
     search?: string,
     city?: string,
     area?: string,
+    type?: string,
   ): Promise<PlaceEntity[]> {
     try {
       const skip = (page - 1) * limit;
@@ -492,8 +978,8 @@ export class PlacesRepository implements IPlacesRepository {
       if (search) {
         whereClause.OR = [
           { name: { contains: search, mode: 'insensitive' } },
-          { address: { contains: search, mode: 'insensitive' } },
-          { description: { contains: search, mode: 'insensitive' } },
+          // { address: { contains: search, mode: 'insensitive' } },
+          // { description: { contains: search, mode: 'insensitive' } },
         ];
       }
 
@@ -508,6 +994,14 @@ export class PlacesRepository implements IPlacesRepository {
         whereClause.address = {
           ...(whereClause.address || {}),
           contains: area,
+          mode: 'insensitive',
+        };
+      }
+
+      if (type && type !== '') {
+        whereClause.placeType = {
+          ...(whereClause.placeType || {}),
+          contains: type,
           mode: 'insensitive',
         };
       }
@@ -542,7 +1036,11 @@ export class PlacesRepository implements IPlacesRepository {
       });
 
       return places.map((value) =>
-        mapToPlaceEntity(value, value.operatingHours, value.tariffPlans),
+        mapToPlaceEntity({
+          place: value,
+          operatingHours: value.operatingHours,
+          tariffPlans: value.tariffPlans,
+        }),
       );
     } catch (e) {
       this.logger.error(`get places repository ${e}`);

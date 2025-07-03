@@ -31,6 +31,7 @@ import { Logger } from 'winston';
 import { BookingsService } from './bookings.service';
 import { JWTAuthorization } from '../common/decorators/auth.decorator';
 import { BookingResponseDto } from './dto/booking-response.dto';
+import { NotificationResponseDto } from '../auth/dto/notification.dto';
 
 @Controller(CONFIG.HEADER_API)
 export class BookingsController {
@@ -102,11 +103,28 @@ export class BookingsController {
   @ApiBearerAuth()
   @Get('/bookings/:id')
   @HttpCode(HttpStatus.OK)
-  async getDetailPlaces(
+  async getDetailBooking(
     @JWTAuthorization() user: any,
     @Param('id', ParseIntPipe) id: number,
   ): Promise<WebSuccessResponse<BookingResponseDto>> {
     const result = await this.bookingService.getBookingService(user, id);
+
+    return {
+      code: HttpStatus.OK,
+      status: true,
+      data: result,
+    };
+  }
+
+  @ApiBearerAuth()
+  @Get('/bookings/:id/cancel')
+  @HttpCode(HttpStatus.OK)
+  async cancelBooking(
+    @JWTAuthorization() user: any,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<WebSuccessResponse<NotificationResponseDto>> {
+    const result: NotificationResponseDto =
+      await this.bookingService.cancelBookingService(user, id);
 
     return {
       code: HttpStatus.OK,

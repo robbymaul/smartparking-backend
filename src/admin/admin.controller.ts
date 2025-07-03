@@ -43,6 +43,11 @@ import {
   Metadata,
 } from './dto/list.admin.dto';
 import { AdminResponseDto } from './dto/admin.dto';
+import {
+  AdminDashboardDto,
+  ListDashboardActivityQueryDto,
+} from './dto/admin.dashboard.dto';
+import { BookingResponseDto } from '../bookings/dto/booking-response.dto';
 
 @Controller(CONFIG.HEADER_API)
 export class AdminController {
@@ -158,7 +163,7 @@ export class AdminController {
     @JWTAdminAuthorization() admin: any,
     @Query() query: ListAdminQueryDto,
   ): Promise<WebSuccessResponse<ListAdminResponseDto>> {
-    this.logger.debug('login request body', query);
+    this.logger.debug('get list admin query', query);
 
     const result: ListAdminResponseDto =
       await this.adminService.getListAdminService(admin, query);
@@ -202,6 +207,57 @@ export class AdminController {
     );
     const result: NotificationResponseDto =
       await this.adminService.updateAdminService(admin, id, request);
+
+    return {
+      code: HttpStatus.OK,
+      status: true,
+      data: result,
+    };
+  }
+
+  @Get('/admins/me')
+  @HttpCode(HttpStatus.OK)
+  @RolesAdmin(['master', 'admin'])
+  async getAdminMe(
+    @JWTAdminAuthorization() admin: any,
+  ): Promise<WebSuccessResponse<AdminResponseDto>> {
+    const result: AdminResponseDto =
+      await this.adminService.getAdminMeService(admin);
+
+    return {
+      code: HttpStatus.OK,
+      status: true,
+      data: result,
+    };
+  }
+
+  @Get('/admins/dashboard')
+  @HttpCode(HttpStatus.OK)
+  @RolesAdmin(['master', 'admin'])
+  async getAdminDashboard(
+    @JWTAdminAuthorization() admin: any,
+  ): Promise<WebSuccessResponse<AdminDashboardDto>> {
+    this.logger.debug('hit admin dashboard');
+    const result: AdminDashboardDto =
+      await this.adminService.getAdminDashboardService(admin);
+
+    return {
+      code: HttpStatus.OK,
+      status: true,
+      data: result,
+    };
+  }
+
+  @Get('/admins/dashboard/activity')
+  @HttpCode(HttpStatus.OK)
+  @RolesAdmin(['master', 'admin'])
+  async getAdminDashboardActivity(
+    @JWTAdminAuthorization() admin: any,
+    @Query() query: ListDashboardActivityQueryDto,
+  ): Promise<WebSuccessResponse<BookingResponseDto[]>> {
+    this.logger.debug(`query list dashboard activity ${JSON.stringify(query)}`);
+    const result: BookingResponseDto[] =
+      await this.adminService.getAdminDashboardServiceActivity(admin, query);
 
     return {
       code: HttpStatus.OK,

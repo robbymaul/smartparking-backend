@@ -1,7 +1,7 @@
 import { BookingEntity } from './booking.entity';
 
 export class BookingStatusLogEntity {
-  id?: number;
+  id: number;
   bookingId: number;
   previousStatus: string;
   newStatus: string;
@@ -14,7 +14,7 @@ export class BookingStatusLogEntity {
   booking?: BookingEntity;
 
   constructor(param: {
-    id?: number;
+    id: number;
     bookingId: number;
     previousStatus: string;
     newStatus: string;

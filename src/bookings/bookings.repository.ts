@@ -85,6 +85,16 @@ export interface IBookingsRepository {
     prisma: PrismaClient,
     bookingEntity: BookingEntity,
   ): Promise<void>;
+
+  updateBookingCancelRepository(
+    prisma: PrismaClient,
+    bookingEntity: BookingEntity,
+  ): Promise<BookingEntity>;
+
+  insertBookingStatusLogRepository(
+    prisma: PrismaClient,
+    bookingStatusLog: BookingStatusLogEntity,
+  ): Promise<void>;
 }
 
 @Injectable()
@@ -93,6 +103,63 @@ export class BookingsRepository implements IBookingsRepository {
     private readonly prismaService: PrismaService,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
   ) {}
+
+  async insertBookingStatusLogRepository(
+    prisma: PrismaClient,
+    bookingStatusLog: BookingStatusLogEntity,
+  ): Promise<void> {
+    try {
+      await prisma.bookingStatusLog.create({
+        data: {
+          bookingId: bookingStatusLog.bookingId,
+          previousStatus: bookingStatusLog.previousStatus,
+          newStatus: bookingStatusLog.newStatus,
+          changedBy: bookingStatusLog.changedBy,
+          reason: bookingStatusLog.reason,
+          statusTime: bookingStatusLog.statusTime,
+        },
+      });
+    } catch (e) {
+      this.logger.error(
+        `insert booking status log entry parking place repository ${e}`,
+      );
+
+      handlePrismaError(
+        e,
+        'insert booking status log entry parking place repository',
+      );
+    }
+  }
+
+  async updateBookingCancelRepository(
+    prisma: PrismaClient,
+    bookingEntity: BookingEntity,
+  ): Promise<BookingEntity> {
+    const updateBooking = await prisma.booking.update({
+      where: {
+        id: bookingEntity.id,
+      },
+      data: {
+        bookingStatus: bookingEntity.bookingStatus,
+        cancellationReason: bookingEntity.cancellationReason,
+        cancellationTimeMinutes: bookingEntity.cancellationTimeMinutes,
+        updatedAt: new Date(),
+      },
+      include: {
+        user: true,
+        parkingSlot: true,
+        vehicle: true,
+        bookingPayment: true,
+      },
+    });
+
+    return mapToBookingEntity({
+      booking: updateBooking,
+      slot: updateBooking.parkingSlot,
+      user: updateBooking.user,
+      vehicle: updateBooking.vehicle,
+    });
+  }
 
   async updateParkingSlotIsReservedRepository(
     prisma: PrismaClient,

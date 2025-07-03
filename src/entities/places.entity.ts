@@ -23,14 +23,15 @@ export class PlaceEntity {
   updatedAt: Date | null;
   OperatingHour?: OperatingHourEntity[];
   TariffPlan?: TariffPlanEntity[];
+  distance?: number;
 
   constructor(partial: Partial<PlaceEntity>) {
     Object.assign(this, partial);
   }
 }
 
-export function mapToPlaceEntity(
-  place: Place,
+export function mapToPlaceEntity(param: {
+  place: Place;
   operatingHours?: {
     id: number;
     placeId: number;
@@ -41,7 +42,7 @@ export function mapToPlaceEntity(
     isClosed: boolean;
     createdAt: Date;
     updatedAt: Date | null;
-  }[],
+  }[];
   tariffPlans?: ({
     tariffRates: {
       id: number;
@@ -69,28 +70,30 @@ export function mapToPlaceEntity(
     planName: string;
     effectiveFrom: Date;
     effectiveUntil: Date | null;
-  })[],
-): PlaceEntity {
+  })[];
+  distance?: any;
+}): PlaceEntity {
   return new PlaceEntity({
-    id: place.id,
-    name: place.name,
-    image: place.image,
-    placeType: place.placeType,
-    address: place.address,
-    latitude: place.latitude?.toNumber(),
-    longitude: place.longitude?.toNumber(),
-    contactNumber: place.contactNumber,
-    email: place.email,
-    description: place.description,
-    totalCapacity: place.totalCapacity,
-    isActive: place.isActive,
-    OperatingHour: operatingHours?.map((operatingHour) =>
+    id: param.place.id,
+    name: param.place.name,
+    image: param.place.image,
+    placeType: param.place.placeType,
+    address: param.place.address,
+    latitude: param.place.latitude?.toNumber(),
+    longitude: param.place.longitude?.toNumber(),
+    contactNumber: param.place.contactNumber,
+    email: param.place.email,
+    description: param.place.description,
+    totalCapacity: param.place.totalCapacity,
+    isActive: param.place.isActive,
+    OperatingHour: param.operatingHours?.map((operatingHour) =>
       mapToOperatingHourEntity(operatingHour),
     ),
-    TariffPlan: tariffPlans?.map((tariffPlan) =>
+    TariffPlan: param.tariffPlans?.map((tariffPlan) =>
       mapToTariffPlanEntity(tariffPlan),
     ),
-    createdAt: place.createdAt,
-    updatedAt: place.updatedAt,
+    createdAt: param.place.createdAt,
+    updatedAt: param.place.updatedAt,
+    distance: param.distance,
   });
 }

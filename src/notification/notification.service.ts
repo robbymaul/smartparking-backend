@@ -1,10 +1,16 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { CONFIG } from '../config/config.schema';
 import axios from 'axios';
 import qs from 'qs';
 import { MailerService } from '@nestjs-modules/mailer';
+import { INotificationsRepository } from './notification.repository';
+import { NotificationEntity } from '../entities/notification.entity';
+import mapToNotificationDto, {
+  NotificationDto,
+} from './dto/notification.response.dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class NotificationService {
@@ -15,6 +21,9 @@ export class NotificationService {
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
     private readonly mailer: MailerService,
+    @Inject('INotificationsRepository')
+    private readonly notificationsRepository: INotificationsRepository,
+    private readonly prismaService: PrismaService,
   ) {
     // const accountId = CONFIG.TWILIO_ACCOUNT_SID;
     // const authToken = CONFIG.TWILIO_AUTH_TOKEN;
@@ -174,6 +183,51 @@ export class NotificationService {
       });
     } catch (e) {
       this.logger.error(`send actiation info email: ${email}, email: ${url}`);
+    }
+  }
+
+  async getListNotificationService(user: any): Promise<NotificationDto[]> {
+    const notificationEntities: NotificationEntity[] =
+      await this.notificationsRepository.getListNotificationUnreadRepository(
+        user,
+      );
+
+    return notificationEntities.map((notificationEntity) =>
+      mapToNotificationDto({ notificationEntity: notificationEntity }),
+    );
+  }
+
+  async getDetailNotificationService(
+    user: any,
+    id: number,
+  ): Promise<NotificationDto> {
+    const notificationEntity: NotificationEntity | null =
+      await this.notificationsRepository.getNotificationByIdRepository(
+        user,
+        id,
+      );
+
+    if (!notificationEntity) {
+      throw new NotFoundException('notifikasi tidak ada atau tidak ditemukan');
+    }
+
+    return mapToNotificationDto({ notificationEntity: notificationEntity });
+  }
+
+  async updateNotificationReadService(user: any, id: number): Promise<void> {
+    try {
+      await this.prismaService.notification.update({
+        where: {
+          id: id,
+          userId: user.id,
+        },
+        data: {
+          isRead: true,
+          readTime: new Date(),
+        },
+      });
+    } catch (e) {
+      this.logger.error(e);
     }
   }
 

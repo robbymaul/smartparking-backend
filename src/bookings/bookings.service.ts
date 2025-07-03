@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -19,11 +20,11 @@ import { Logger } from 'winston';
 import Decimal from 'decimal.js';
 import { PrismaService } from '../prisma/prisma.service';
 import { TariffRateEntity } from '../entities/tariff.rate.entity';
-import { SlotAvailabilityEntity } from '../entities/slot.availability.entity';
 import { PrismaClient } from 'generated/prisma';
 import { DateUtil } from '../common/utils/date.util';
 import { GeneratorsService } from '../common/utils/generators';
 import { BookingResponseDto } from './dto/booking-response.dto';
+import { NotificationResponseDto } from '../auth/dto/notification.dto';
 
 @Injectable()
 export class BookingsService {
@@ -71,6 +72,10 @@ export class BookingsService {
           throw new NotFoundException('slot parkir tidak ditemukan');
         }
 
+        if (parkingSlot.isReserved) {
+          throw new ConflictException('parking slot is already reserved');
+        }
+
         const estimatedPrice = await this.calculateParkingFee(
           placeId,
           userVehicle.vehicleType,
@@ -109,6 +114,7 @@ export class BookingsService {
           Slot: null,
           Place: null,
           Vehicle: null,
+          User: null,
         });
 
         this.logger.debug('booking entity', newBookingEntity);
@@ -124,24 +130,25 @@ export class BookingsService {
           bookingEntity,
         );
 
-        const newSlotAvailability = new SlotAvailabilityEntity({
-          slotId: bookingEntity.slotId,
-          availableFrom: bookingEntity.scheduledEntry,
-          availableUntil: bookingEntity.scheduledExit,
-          isBookable: false,
-          statusReason: `Booked by ${bookingEntity.bookingReference}`,
-        });
-
-        await this.bookingRepository.createSlotAvailabilityRepository(
-          prisma,
-          newSlotAvailability,
-        );
+        // const newSlotAvailability = new SlotAvailabilityEntity({
+        //   slotId: bookingEntity.slotId,
+        //   availableFrom: bookingEntity.scheduledEntry,
+        //   availableUntil: bookingEntity.scheduledExit,
+        //   isBookable: false,
+        //   statusReason: `Booked by ${bookingEntity.bookingReference}`,
+        // });
+        //
+        // await this.bookingRepository.createSlotAvailabilityRepository(
+        //   prisma,
+        //   newSlotAvailability,
+        // );
 
         if (promoCodeId) {
           await this.bookingRepository.updatePromoCodeRepository(promoCodeId);
         }
 
         const newBookingStatusLog = new BookingStatusLogEntity({
+          id: 0,
           bookingId: bookingEntity.id,
           previousStatus: 'NONE',
           newStatus: BookingStatus.PENDING,
@@ -189,7 +196,7 @@ export class BookingsService {
       endTime: bookingEntity.scheduledExit,
       adminFee: 0,
       discount: 0,
-      estimatedPrice: Number(bookingEntity.estimatedPrice),
+      estimatedPrice: bookingEntity.estimatedPrice,
       licencePlate: bookingEntity.Vehicle?.licensePlate ?? '',
       vehicle: bookingEntity.Vehicle?.vehicleType ?? '',
       location: bookingEntity.Place?.name ?? '',
@@ -215,6 +222,118 @@ export class BookingsService {
     );
 
     await this.bookingRepository.updateBookingQRCodeRepository(bookingEntity);
+  }
+
+  async cancelBookingService(
+    user: any,
+    id: number,
+  ): Promise<NotificationResponseDto> {
+    const bookingEntity: BookingEntity | null =
+      await this.bookingRepository.getBookingByIdRepository(id);
+
+    if (!bookingEntity) {
+      throw new NotFoundException(`Booking with ID ${id} not found`);
+    }
+
+    // Check if user owns the booking or is admin
+    if (bookingEntity.userId !== user.id) {
+      throw new ForbiddenException(
+        'You are not authorized to cancel this booking',
+      );
+    }
+
+    // Check if booking can be cancelled
+    if (bookingEntity.bookingStatus === 'cancelled') {
+      throw new BadRequestException('Booking is already cancelled');
+    }
+
+    if (bookingEntity.actualEntry) {
+      throw new BadRequestException(
+        'Cannot cancel booking that has already started',
+      );
+    }
+
+    // Check cancellation policy based on scheduled entry time
+    const now = new Date();
+    const scheduledEntry = new Date(bookingEntity.scheduledEntry);
+    const timeDiff = scheduledEntry.getTime() - now.getTime();
+    const minutesDiff = Math.floor(timeDiff / (1000 * 60));
+    const hoursDiff = minutesDiff / 60;
+
+    if (minutesDiff <= 0) {
+      throw new BadRequestException(
+        'Cannot cancel booking after scheduled entry time',
+      );
+    }
+
+    if (hoursDiff < 1) {
+      throw new BadRequestException(
+        'Cannot cancel booking less than 1 hour before scheduled entry',
+      );
+    }
+
+    // Calculate refund percentage based on cancellation timing
+    // let refundPercentage = 0;
+    // if (hoursDiff >= 24) {
+    //   refundPercentage = 100; // Full refund if cancelled 24+ hours before
+    // } else if (hoursDiff >= 12) {
+    //   refundPercentage = 75; // 75% refund if cancelled 12-24 hours before
+    // } else if (hoursDiff >= 6) {
+    //   refundPercentage = 50; // 50% refund if cancelled 6-12 hours before
+    // } else if (hoursDiff >= 2) {
+    //   refundPercentage = 25; // 25% refund if cancelled 2-6 hours before
+    // }
+    // No refund if cancelled less than 2 hours before
+
+    // Calculate refund amount
+    // const estimatedPrice = parseFloat(booking.estimatedPrice.toString());
+    // const refundAmount = (estimatedPrice * refundPercentage) / 100;
+
+    const result: NotificationResponseDto =
+      await this.prismaService.transactional(
+        async (prisma: PrismaClient): Promise<NotificationResponseDto> => {
+          // previous status
+          let previousStatus = bookingEntity.bookingStatus;
+
+          // update data booking entity
+          bookingEntity.bookingStatus = BookingStatus.CANCELLED;
+          bookingEntity.cancellationReason = 'User requested cancellation';
+          bookingEntity.cancellationTimeMinutes = minutesDiff;
+          const updateBookingCancelled: BookingEntity =
+            await this.bookingRepository.updateBookingCancelRepository(
+              prisma,
+              bookingEntity,
+            );
+
+          // create booking status log
+          const bookingStatusLogEntity: BookingStatusLogEntity =
+            new BookingStatusLogEntity({
+              id: 0,
+              bookingId: bookingEntity.id,
+              changedBy: `${user.id} | ${user.email}`,
+              newStatus: bookingEntity.bookingStatus,
+              previousStatus: previousStatus,
+            });
+
+          await this.bookingRepository.insertBookingStatusLogRepository(
+            prisma,
+            bookingStatusLogEntity,
+          );
+
+          await this.processCancellationSideEffect(
+            updateBookingCancelled,
+            user,
+          );
+
+          return {
+            message: `${bookingEntity.cancellationReason} | ${bookingEntity.bookingReference} | ${bookingEntity.Slot?.slotNumber}`,
+            success: true,
+            data: null,
+          };
+        },
+      );
+
+    return result;
   }
 
   private async calculateParkingFee(
@@ -414,6 +533,40 @@ export class BookingsService {
       throw new ConflictException(
         'Slot parkir sudah dibooking untuk periode waktu yang diminta',
       );
+    }
+  }
+
+  private async processCancellationSideEffect(
+    bookingEntity: BookingEntity,
+    user: any,
+  ): Promise<void> {
+    try {
+      // update parking slot availability
+      await this.prismaService.notification.create({
+        data: {
+          userId: bookingEntity.userId,
+          bookingId: bookingEntity.id,
+          notificationType: 'booking_cancelled',
+          channel: 'User',
+          content: `Your booking (${bookingEntity.bookingReference}) has been cancelled. 'No refund applicable.`,
+          isRead: false,
+        },
+      });
+
+      await this.prismaService.parkingSlot.update({
+        where: {
+          id: bookingEntity.slotId,
+        },
+        data: {
+          isReserved: false,
+          isOccupied: false,
+          updatedAt: new Date(),
+        },
+      });
+
+      // update status slot is reserved is false
+    } catch (e) {
+      this.logger.error(e);
     }
   }
 }

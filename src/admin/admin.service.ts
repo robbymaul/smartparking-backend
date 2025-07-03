@@ -29,6 +29,19 @@ import {
   Metadata,
 } from './dto/list.admin.dto';
 import { AdminResponseDto, mapToAdminResponseDto } from './dto/admin.dto';
+import {
+  AdminDashboardDto,
+  ListDashboardActivityQueryDto,
+} from './dto/admin.dashboard.dto';
+import { DateUtil } from '../common/utils/date.util';
+import { OperatingHourEntity } from '../entities/operating.hours.entity';
+import { mapToOperatingHourDtoResponse } from '../places/dto/operating.hour.dto';
+import { TariffPlanEntity } from '../entities/tariff.plan.entity';
+import { mapToTariffPlanDtoResponse } from '../places/dto/tariff.plan.dto';
+import mapToBookingResponseDto, {
+  BookingResponseDto,
+} from '../bookings/dto/booking-response.dto';
+import { BookingEntity } from '../entities/booking.entity';
 
 @Injectable()
 export class AdminService {
@@ -189,6 +202,7 @@ export class AdminService {
             message: 'Berhasil membuat admin baru',
             success: true,
             email: email,
+            data: null,
           };
         },
       );
@@ -309,11 +323,106 @@ export class AdminService {
           return {
             success: true,
             message: 'admin updated successfully',
+            data: null,
           };
         },
       );
 
     return result;
+  }
+
+  async getAdminMeService(admin: any): Promise<AdminResponseDto> {
+    const adminEntity = await this.adminRepository.getPlaceAdminByIdRepository(
+      admin,
+      admin.id,
+    );
+
+    if (!adminEntity) {
+      throw new NotFoundException('Akun tidak ditemukan.');
+    }
+
+    if (!adminEntity.isActive) {
+      throw new ForbiddenException('Akun sudah tidak aktif');
+    }
+
+    return mapToAdminResponseDto(adminEntity);
+  }
+
+  async getAdminDashboardService(admin: any): Promise<AdminDashboardDto> {
+    const placeEntity: PlaceEntity | null =
+      await this.adminRepository.getPlaceByAdminRepository(admin);
+
+    // check if found
+    if (!placeEntity) {
+      throw new NotFoundException('place anda tidak ditemukan');
+    }
+
+    const availableParking: number =
+      await this.adminRepository.getAvailableParkingRepository(
+        admin,
+        placeEntity,
+      );
+
+    const occupiedParking: number =
+      await this.adminRepository.getOccupiedParkingRepository(
+        admin,
+        placeEntity,
+      );
+
+    const reservedParking: number =
+      await this.adminRepository.getReservedParkingRepository(
+        admin,
+        placeEntity,
+      );
+
+    const date: Date = new Date();
+    const dayOfWeek = date.getDay();
+    const today = DateUtil.todayIsDay(dayOfWeek);
+
+    const operatingHour: OperatingHourEntity | null =
+      await this.adminRepository.getOperatingHourTodayPlaceRepository(
+        placeEntity,
+        today,
+      );
+
+    const tariffPlan: TariffPlanEntity[] =
+      await this.adminRepository.getTariffPlanPlaceRepository(placeEntity);
+
+    return {
+      availableParking: availableParking,
+      occupiedParking: occupiedParking,
+      operatingHours: operatingHour
+        ? mapToOperatingHourDtoResponse(operatingHour)
+        : null,
+      placeName: placeEntity.name,
+      reservedParking: reservedParking,
+      tariffPlan: tariffPlan.map((v) => mapToTariffPlanDtoResponse(v)),
+    };
+  }
+
+  async getAdminDashboardServiceActivity(
+    admin: any,
+    query: ListDashboardActivityQueryDto,
+  ): Promise<BookingResponseDto[]> {
+    const placeEntity: PlaceEntity | null =
+      await this.adminRepository.getPlaceByAdminRepository(admin);
+
+    // check if found
+    if (!placeEntity) {
+      throw new NotFoundException('place anda tidak ditemukan');
+    }
+
+    const bookingEntities: BookingEntity[] =
+      await this.adminRepository.getAdminDashboardActivityBookingRepository(
+        admin,
+        placeEntity,
+        query,
+      );
+
+    return bookingEntities.map(
+      (bookingEntity): BookingResponseDto =>
+        mapToBookingResponseDto(bookingEntity),
+    );
   }
 
   private async generateTokens(admin: PlaceAdminEntity): Promise<string> {

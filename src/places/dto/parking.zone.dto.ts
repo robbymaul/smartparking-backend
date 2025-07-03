@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ParkingSlotDtoResponse } from './parking.slot.dto';
+import { IsEnum, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { ZoneType } from '../../common/enum/enum';
 
 export class ParkingZoneDtoResponse {
   @ApiProperty({ example: 1 })
@@ -62,3 +64,19 @@ export const mapToParkingZoneDtoResponse = (
     ParkingSlots: param.ParkingSlots,
   };
 };
+
+export class ParkingZoneRequestDto {
+  @IsString()
+  @IsNotEmpty()
+  zoneName: string;
+
+  @IsString()
+  @IsNotEmpty()
+  floorLevel: string;
+
+  @IsEnum(ZoneType)
+  zoneType: ZoneType;
+
+  @IsNumber()
+  totalSlot: number;
+}

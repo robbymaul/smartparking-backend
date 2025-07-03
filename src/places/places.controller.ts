@@ -35,14 +35,25 @@ import { PlaceResponseDto, RegisterPlacesRequestDto } from './dto/places.dto';
 import { CONFIG } from '../config/config.schema';
 import { NearbyPlaceDto } from './dto/place.nearby.dto';
 import { PlacesRatingDtoResponse } from './dto/places.rating.dto';
-import { ParkingZoneDtoResponse } from './dto/parking.zone.dto';
-import { ParkingSlotDtoResponse } from './dto/parking.slot.dto';
+import {
+  ParkingZoneDtoResponse,
+  ParkingZoneRequestDto,
+} from './dto/parking.zone.dto';
+import {
+  DetailParkingSlotDtoResponse,
+  ParkingSlotDtoResponse,
+  ScanQrCodeDtoRequest,
+} from './dto/parking.slot.dto';
 import { NotificationResponseDto } from '../auth/dto/notification.dto';
 import { RolesAdmin } from '../common/decorators/roles.decorators';
 import {
   OperatingHourDtoResponse,
   OperatingHourRequestDto,
 } from './dto/operating.hour.dto';
+import {
+  TariffPlanDtoResponse,
+  TariffPlanRequestDto,
+} from './dto/tariff.plan.dto';
 
 @Controller(CONFIG.HEADER_API)
 export class PlacesController {
@@ -77,6 +88,7 @@ export class PlacesController {
     @Query('search') search: string,
     @Query('city') city: string,
     @Query('area') area: string,
+    @Query('type') type: string,
     @JWTAuthorization() user: any,
   ): Promise<WebSuccessResponse<PlaceResponseDto[]>> {
     const result = await this.placesService.getPlacesService(
@@ -86,6 +98,7 @@ export class PlacesController {
       search,
       city,
       area,
+      type,
     );
 
     return {
@@ -401,6 +414,138 @@ export class PlacesController {
         admin,
         request,
       );
+
+    return {
+      code: HttpStatus.OK,
+      status: true,
+      data: result,
+    };
+  }
+
+  @Post('/admins/places/parking-zones')
+  @HttpCode(HttpStatus.OK)
+  @RolesAdmin(['master'])
+  async adminCreatePlaceParkingZones(
+    @JWTAdminAuthorization() admin: any,
+    @Body() request: ParkingZoneRequestDto,
+  ): Promise<WebSuccessResponse<NotificationResponseDto>> {
+    const result: NotificationResponseDto =
+      await this.placesService.adminCreateParkingZoneService(admin, request);
+
+    return {
+      code: HttpStatus.OK,
+      status: true,
+      data: result,
+    };
+  }
+
+  @Get('/admins/places/parking-zones')
+  @HttpCode(HttpStatus.OK)
+  @RolesAdmin(['master', 'admin'])
+  async adminGetListPlaceParkingZones(
+    @JWTAdminAuthorization() admin: any,
+  ): Promise<WebSuccessResponse<ParkingZoneDtoResponse[]>> {
+    const result: ParkingZoneDtoResponse[] =
+      await this.placesService.adminGetListParkingZoneService(admin);
+
+    return {
+      code: HttpStatus.OK,
+      status: true,
+      data: result,
+    };
+  }
+
+  @Get('/admins/places/parking-zones/:id/parking-slot')
+  @HttpCode(HttpStatus.OK)
+  @RolesAdmin(['master', 'admin'])
+  async adminGetListPlaceParkingSlot(
+    @JWTAdminAuthorization() admin: any,
+    @Param('id', ParseIntPipe) idZone: number,
+  ): Promise<WebSuccessResponse<ParkingSlotDtoResponse[]>> {
+    const result: ParkingSlotDtoResponse[] =
+      await this.placesService.adminGetListParkingSlotService(admin, idZone);
+
+    return {
+      code: HttpStatus.OK,
+      status: true,
+      data: result,
+    };
+  }
+
+  @Get('/admins/places/parking-zones/:id/parking-slot/:slotId')
+  @HttpCode(HttpStatus.OK)
+  @RolesAdmin(['master', 'admin'])
+  async adminGetDetailPlaceParkingSlot(
+    @JWTAdminAuthorization() admin: any,
+    @Param('id', ParseIntPipe) idZone: number,
+    @Param('slotId', ParseIntPipe) slotId: number,
+  ): Promise<WebSuccessResponse<DetailParkingSlotDtoResponse>> {
+    const result: DetailParkingSlotDtoResponse =
+      await this.placesService.adminGetDetailParkingSlotService(
+        admin,
+        idZone,
+        slotId,
+      );
+
+    return {
+      code: HttpStatus.OK,
+      status: true,
+      data: result,
+    };
+  }
+
+  @Post('/admins/places/parking-zones/:id/parking-slot/:slotId/scan-qr')
+  @HttpCode(HttpStatus.OK)
+  @RolesAdmin(['master', 'admin'])
+  async adminScanBookingQrCodeDetailPlaceParkingSlot(
+    @JWTAdminAuthorization() admin: any,
+    @Param('id', ParseIntPipe) idZone: number,
+    @Param('slotId', ParseIntPipe) slotId: number,
+    @Body() request: ScanQrCodeDtoRequest,
+  ): Promise<WebSuccessResponse<NotificationResponseDto>> {
+    const result: NotificationResponseDto =
+      await this.placesService.adminScanBookingQrCodeDetailParkingSlotService(
+        admin,
+        idZone,
+        slotId,
+        request,
+      );
+
+    return {
+      code: HttpStatus.OK,
+      status: true,
+      data: result,
+    };
+  }
+
+  @Post('/admins/places/tariff-plan')
+  @HttpCode(HttpStatus.OK)
+  @RolesAdmin(['master'])
+  async adminCreatePlaceTariffPlan(
+    @JWTAdminAuthorization() admin: any,
+    @Body() request: TariffPlanRequestDto,
+  ): Promise<WebSuccessResponse<NotificationResponseDto>> {
+    const result: NotificationResponseDto =
+      await this.placesService.adminCreatePlaceTariffPlanService(
+        admin,
+        request,
+      );
+
+    return {
+      code: HttpStatus.OK,
+      status: true,
+      data: result,
+    };
+  }
+
+  @Get('/admins/places/tariff-plan')
+  @HttpCode(HttpStatus.OK)
+  @RolesAdmin(['master, admin'])
+  async adminGetListPlaceTariffPlan(
+    @JWTAdminAuthorization() admin: any,
+  ): Promise<WebSuccessResponse<TariffPlanDtoResponse[]>> {
+    const result: TariffPlanDtoResponse[] =
+      await this.placesService.adminGetListPlaceTariffPlanService(admin);
 
     return {
       code: HttpStatus.OK,

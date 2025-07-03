@@ -1,4 +1,5 @@
 import { DateTime } from 'luxon';
+import { DayOfWeek } from '../enum/enum';
 
 const DEFAULT_TZ = 'Asia/Jakarta'; // Timezone WIB
 
@@ -70,5 +71,26 @@ export const DateUtil = {
   toISOTimeOnly(time: string): Date {
     // Misal input "08:00:00"
     return new Date(`1970-01-01T${time}Z`);
+  },
+
+  todayIsDay(dayOfWeek: number): DayOfWeek {
+    switch (dayOfWeek) {
+      case 0:
+        return DayOfWeek.SUNDAY;
+      case 1:
+        return DayOfWeek.MONDAY;
+      case 2:
+        return DayOfWeek.TUESDAY;
+      case 3:
+        return DayOfWeek.WEDNESDAY;
+      case 4:
+        return DayOfWeek.THURSDAY;
+      case 5:
+        return DayOfWeek.FRIDAY;
+      case 6:
+        return DayOfWeek.SATURDAY;
+      default:
+        return DayOfWeek.SUNDAY;
+    }
   },
 };

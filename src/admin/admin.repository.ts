@@ -11,6 +11,16 @@ import { Prisma, PrismaClient } from 'generated/prisma';
 import { SystemLogEntity } from '../entities/system.log.entity';
 import { mapToPlaceEntity, PlaceEntity } from '../entities/places.entity';
 import { ListAdminQueryDto } from './dto/list.admin.dto';
+import {
+  mapToOperatingHourEntity,
+  OperatingHourEntity,
+} from '../entities/operating.hours.entity';
+import {
+  mapToTariffPlanEntity,
+  TariffPlanEntity,
+} from '../entities/tariff.plan.entity';
+import { BookingEntity, mapToBookingEntity } from '../entities/booking.entity';
+import { ListDashboardActivityQueryDto } from './dto/admin.dashboard.dto';
 
 export interface IAdminRepository {
   getPlaceAdminByEmailRepository(
@@ -48,6 +58,38 @@ export interface IAdminRepository {
     prisma: PrismaClient,
     updatedAdmin: PlaceAdminEntity,
   ): Promise<void>;
+
+  getPlaceByAdminRepository(admin: any): Promise<PlaceEntity | null>;
+
+  getAvailableParkingRepository(
+    admin: any,
+    placeEntity: PlaceEntity,
+  ): Promise<number>;
+
+  getOccupiedParkingRepository(
+    admin: any,
+    placeEntity: PlaceEntity,
+  ): Promise<number>;
+
+  getReservedParkingRepository(
+    admin: any,
+    placeEntity: PlaceEntity,
+  ): Promise<number>;
+
+  getOperatingHourTodayPlaceRepository(
+    placeEntity: PlaceEntity,
+    today: string,
+  ): Promise<OperatingHourEntity | null>;
+
+  getTariffPlanPlaceRepository(
+    placeEntity: PlaceEntity,
+  ): Promise<TariffPlanEntity[]>;
+
+  getAdminDashboardActivityBookingRepository(
+    admin: any,
+    placeEntity: PlaceEntity,
+    query: ListDashboardActivityQueryDto,
+  ): Promise<BookingEntity[]>;
 }
 
 @Injectable()
@@ -56,6 +98,190 @@ export class AdminRepository implements IAdminRepository {
     private readonly prismaService: PrismaService,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
   ) {}
+
+  async getAdminDashboardActivityBookingRepository(
+    admin: any,
+    placeEntity: PlaceEntity,
+    query: ListDashboardActivityQueryDto,
+  ): Promise<BookingEntity[]> {
+    try {
+      const statusFilter =
+        query.status && query.status.trim() !== ''
+          ? { bookingStatus: query.status } // Changed from bookingStatus to status to match your model
+          : {};
+
+      // Pagination calculation
+      const page = query.page || 1;
+      const perPage = query.perPage || 10;
+      const skip = (page - 1) * perPage;
+
+      const bookings = await this.prismaService.booking.findMany({
+        where: {
+          AND: [
+            { parkingSlot: { parkingZone: { placeId: placeEntity.id } } },
+            statusFilter,
+          ],
+        },
+        include: {
+          parkingSlot: {
+            include: {
+              parkingZone: {
+                include: {
+                  place: true,
+                },
+              },
+            },
+          },
+          vehicle: true,
+          user: {
+            include: {
+              profile: true,
+            },
+          },
+        },
+        skip: skip,
+        take: perPage,
+      });
+
+      return bookings.map((value) =>
+        mapToBookingEntity({
+          booking: value,
+          place: value.parkingSlot.parkingZone.place,
+          vehicle: value.vehicle,
+          user: value.user,
+          userProfile: value.user.profile ?? undefined,
+          slot: value.parkingSlot,
+        }),
+      );
+    } catch (e) {
+      this.logger.error(`get admin dashboard activity booking repository ${e}`);
+
+      handlePrismaError(e, 'get admin dashboard activity booking repository');
+    }
+  }
+
+  async getTariffPlanPlaceRepository(
+    placeEntity: PlaceEntity,
+  ): Promise<TariffPlanEntity[]> {
+    try {
+      const tariffPlan = await this.prismaService.tariffPlan.findMany({
+        where: {
+          placeId: placeEntity.id,
+        },
+        include: {
+          tariffRates: true,
+        },
+      });
+
+      return tariffPlan.map((value) => mapToTariffPlanEntity(value));
+    } catch (e) {
+      this.logger.error(`get tariff plan place repository ${e}`);
+
+      handlePrismaError(e, 'get tariff plan place repository');
+    }
+  }
+
+  async getOperatingHourTodayPlaceRepository(
+    placeEntity: PlaceEntity,
+    today: string,
+  ): Promise<OperatingHourEntity | null> {
+    try {
+      const operatingHour = await this.prismaService.operatingHour.findFirst({
+        where: {
+          placeId: placeEntity.id,
+          dayOfWeek: today,
+        },
+      });
+
+      return operatingHour ? mapToOperatingHourEntity(operatingHour) : null;
+    } catch (e) {
+      this.logger.error(`get operating hour today repository ${e}`);
+
+      handlePrismaError(e, 'get operating hour today repository');
+    }
+  }
+
+  async getReservedParkingRepository(
+    admin: any,
+    placeEntity: PlaceEntity,
+  ): Promise<number> {
+    try {
+      const sql = `select COUNT(s.slot_id)
+                   from parking_slots s
+                            JOIN parking_zones z on z.zone_id = s.zone_id
+                   where z.place_id = ${placeEntity.id}
+                     and s.is_reserved = true;`;
+
+      const count =
+        await this.prismaService.$queryRawUnsafe<{ count: number }[]>(sql);
+
+      return Number(count[0]?.count) ?? 0;
+    } catch (e) {
+      this.logger.error(`get reserved parking repository ${e}`);
+
+      handlePrismaError(e, 'get reserved parking repository');
+    }
+  }
+
+  async getOccupiedParkingRepository(
+    admin: any,
+    placeEntity: PlaceEntity,
+  ): Promise<number> {
+    try {
+      const sql = `select COUNT(s.slot_id)
+                   from parking_slots s
+                            JOIN parking_zones z on z.zone_id = s.zone_id
+                   where z.place_id = ${placeEntity.id}
+                     and s.is_occupied = true;`;
+
+      const count =
+        await this.prismaService.$queryRawUnsafe<{ count: number }[]>(sql);
+
+      return Number(count[0]?.count) ?? 0;
+    } catch (e) {
+      this.logger.error(`get occupied parking repository ${e}`);
+
+      handlePrismaError(e, 'get occupied parking repository');
+    }
+  }
+
+  async getAvailableParkingRepository(
+    admin: any,
+    placeEntity: PlaceEntity,
+  ): Promise<number> {
+    try {
+      const sql = `select COUNT(s.slot_id)
+                   from parking_slots s
+                            JOIN parking_zones z on z.zone_id = s.zone_id
+                   where z.place_id = ${placeEntity.id}
+                     and (s.is_reserved = false and s.is_occupied = false);`;
+
+      const count =
+        await this.prismaService.$queryRawUnsafe<{ count: number }[]>(sql);
+
+      return Number(count[0]?.count) ?? 0;
+    } catch (e) {
+      this.logger.error(`get available parking repository ${e}`);
+
+      handlePrismaError(e, 'get available parking repository');
+    }
+  }
+
+  async getPlaceByAdminRepository(admin: any): Promise<PlaceEntity | null> {
+    try {
+      const places = await this.prismaService.place.findUnique({
+        where: {
+          id: admin.placeId,
+        },
+      });
+
+      return places ? mapToPlaceEntity({ place: places }) : null;
+    } catch (e) {
+      this.logger.error(`get place by admin repository ${e}`);
+
+      handlePrismaError(e, 'get place by admin repository');
+    }
+  }
 
   async updatePlaceAdminRepository(
     prisma: PrismaClient,
@@ -219,7 +445,7 @@ export class AdminRepository implements IAdminRepository {
         where: { id: placeId },
       });
 
-      return place ? mapToPlaceEntity(place) : null;
+      return place ? mapToPlaceEntity({ place: place }) : null;
     } catch (e) {
       this.logger.error(`get place by id repository ${e}`);
 

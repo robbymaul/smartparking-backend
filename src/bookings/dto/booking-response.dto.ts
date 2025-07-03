@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNumber, IsString } from 'class-validator';
 import { BookingStatus } from '../interfaces/booking-status.interface';
+import { BookingEntity } from '../../entities/booking.entity';
+import Decimal from 'decimal.js';
 
 export class BookingResponseDto {
   @ApiProperty({ example: 1 })
@@ -72,5 +74,31 @@ export class BookingResponseDto {
 
   @ApiProperty({ example: 1 })
   @IsNumber()
-  estimatedPrice: number;
+  estimatedPrice: Decimal;
 }
+
+const mapToBookingResponseDto = (
+  bookingEntity: BookingEntity,
+): BookingResponseDto => {
+  return {
+    address: bookingEntity.Place?.address ?? '',
+    adminFee: 0,
+    bookingReference: bookingEntity.bookingReference,
+    discount: 0,
+    endTime: bookingEntity.scheduledExit,
+    estimatedPrice: bookingEntity.estimatedPrice,
+    id: bookingEntity.id,
+    licencePlate: bookingEntity.Vehicle?.licensePlate ?? '',
+    location: bookingEntity.Place?.name ?? '',
+    name: `${bookingEntity.User?.Profile?.firstName} ${bookingEntity.User?.Profile?.lastName}`,
+    payment: bookingEntity.bookingStatus,
+    phone: bookingEntity.User?.phoneNumber ?? '',
+    qrCode: bookingEntity.qrCode ?? '',
+    slotNumber: bookingEntity.Slot?.slotNumber ?? '',
+    startTime: bookingEntity.scheduledEntry,
+    status: bookingEntity.bookingStatus,
+    vehicle: bookingEntity.Vehicle?.vehicleType ?? '',
+  };
+};
+
+export default mapToBookingResponseDto;

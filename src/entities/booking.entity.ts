@@ -1,11 +1,20 @@
 import Decimal from 'decimal.js';
-import { Booking, ParkingSlot, Place, Vehicle } from '../../generated/prisma';
+import {
+  Booking,
+  BookingPayment,
+  ParkingSlot,
+  Place,
+  User,
+  UserProfile,
+  Vehicle,
+} from '../../generated/prisma';
 import { mapToPlaceEntity, PlaceEntity } from './places.entity';
 import { mapToVehicleEntity, VehicleEntity } from './vehicle.entity';
 import {
   mapToParkingSlotEntity,
   ParkingSlotEntity,
 } from './parking.slot.entity';
+import { mapToUserEntity, UserEntity } from './user.entity';
 
 export class BookingEntity {
   id: number;
@@ -30,6 +39,7 @@ export class BookingEntity {
   Place: PlaceEntity | null;
   Vehicle: VehicleEntity | null;
   Slot: ParkingSlotEntity | null;
+  User: UserEntity | null;
 
   constructor(params: BookingEntity) {
     Object.assign(this, params);
@@ -41,6 +51,9 @@ export function mapToBookingEntity(param: {
   place?: Place;
   vehicle?: Vehicle;
   slot?: ParkingSlot;
+  user?: User;
+  userProfile?: UserProfile;
+  payment?: BookingPayment;
 }): BookingEntity {
   const { booking } = param;
 
@@ -64,8 +77,11 @@ export function mapToBookingEntity(param: {
     cancellationTimeMinutes: booking.cancellationTimeMinutes,
     createdAt: booking.createdAt,
     updatedAt: booking.updatedAt ? booking.updatedAt : null,
-    Place: param.place ? mapToPlaceEntity(param.place) : null,
+    Place: param.place ? mapToPlaceEntity({ place: param.place }) : null,
     Vehicle: param.vehicle ? mapToVehicleEntity(param.vehicle) : null,
     Slot: param.slot ? mapToParkingSlotEntity({ slot: param.slot }) : null,
+    User: param.user
+      ? mapToUserEntity({ user: param.user, profile: param.userProfile })
+      : null,
   };
 }

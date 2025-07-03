@@ -25,6 +25,7 @@ export function mapToNotificationResponseDto(
     expiryMinutes: params.expiryMinutes,
     token: params.token,
     validUntil: params.validUntil,
+    data: null,
   };
 }
 
@@ -37,6 +38,7 @@ export class NotificationResponseDto {
   token?: string;
   expiryMinutes?: number;
   validUntil?: Date;
+  data: any | null;
 
   @IsOptional()
   @IsNumber()

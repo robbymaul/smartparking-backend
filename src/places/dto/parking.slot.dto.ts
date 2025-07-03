@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { SlotAvailabilityDtoResponse } from './slot.availability.dto';
+import { IsNumber, IsString } from 'class-validator';
 
 export class ParkingSlotDtoResponse {
   @ApiProperty({ example: 1 })
@@ -62,3 +63,42 @@ export const mapToParkingSlotDtoResponse = (
     SlotAvailability: param.SlotAvailability,
   };
 };
+export class DetailParkingSlotDtoResponse {
+  parkingSlotId: number;
+  zoneId: number;
+  slotNumber: string;
+  slotStatus: string;
+  lastCompletedBooking: BookingParkingSlotDtoResponse | null;
+  currentActiveBooking: BookingParkingSlotDtoResponse | null;
+}
+
+export class BookingParkingSlotDtoResponse {
+  id: number;
+  vehicleId: number;
+  bookingReference: string;
+  bookingTime: string;
+  scheduledEntry: string;
+  scheduledExit: string;
+  actualEntry: string;
+  actualExit: string;
+  qrCode: string;
+  bookingStatus: string;
+  cancelReason: string;
+  vehicle: {
+    id: number;
+    licensePlate: string;
+    vehicleType: string;
+    // tambahkan field vehicle lainnya
+  };
+}
+
+export class ScanQrCodeDtoRequest {
+  @IsString()
+  ref: string;
+
+  @IsNumber()
+  ts: number;
+
+  @IsString()
+  type: string;
+}

@@ -4,6 +4,17 @@ import {
   TariffRateDtoParams,
   TariffRateDtoResponse,
 } from './tariff.rate.dto';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
+import { DayCategory, SlotType, VehicleType } from '../../common/enum/enum';
+import Decimal from 'decimal.js';
+import { Type } from 'class-transformer';
 
 export class TariffPlanDtoResponse {
   @ApiProperty({ example: 1 })
@@ -60,3 +71,61 @@ export const mapToTariffPlanDtoResponse = (
     ),
   };
 };
+
+export class TariffPlanRequestDto {
+  @IsString()
+  @IsNotEmpty()
+  planName: string;
+
+  @IsString()
+  @IsOptional()
+  description: string;
+
+  @IsString()
+  effectiveFrom: string;
+
+  @IsString()
+  effectiveUntil: string;
+
+  @ValidateNested({ each: true })
+  @Type(() => TariffRateRequestDto)
+  tariffRates: TariffRateRequestDto[];
+}
+
+export class TariffRateRequestDto {
+  @IsEnum(VehicleType, {
+    message: 'slot type [Car]',
+  })
+  vehicleType: string;
+
+  @IsEnum(SlotType, {
+    message: 'slot type [Regular, VIP]',
+  })
+  slotType: string;
+
+  @IsString()
+  startTime: string;
+
+  @IsString()
+  endTime: string;
+
+  @IsEnum(DayCategory, {
+    message: 'day category [Weekday, Weekend]',
+  })
+  dayCategory: DayCategory;
+
+  @IsNumber()
+  basePrice: Decimal;
+
+  @IsNumber()
+  hourlyRate: Decimal;
+
+  @IsNumber()
+  dayRate: Decimal;
+
+  @IsNumber()
+  minimumCharge: Decimal;
+
+  @IsNumber()
+  gracePeriodMinute: number;
+}
