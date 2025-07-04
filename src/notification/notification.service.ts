@@ -55,7 +55,10 @@ export class NotificationService {
       // const message = `[Smart Parking] Kode OTP Anda adalah: ${otp}. Kode ini berlaku selama 10 menit.`;
       // const message = `Verif ${otp}. Berlaku 10 Menit`;
       // return await this.sendMessage(phoneNumber, message);
-      return await this.sendOtpViaZenziva(phoneNumber, message);
+      await this.sendOtpViaZenzivaSmsReguler(phoneNumber, message);
+      await this.sendOtpViaZenzivaWaOfficial(phoneNumber, otp);
+
+      return true;
     } catch (error) {
       this.logger.error(
         `failed to send OTP to ${phoneNumber}: ${error.message}`,
@@ -88,7 +91,7 @@ export class NotificationService {
   //   }
   // }
 
-  async sendOtpViaZenziva(
+  async sendOtpViaZenzivaSmsReguler(
     phoneNumber: string,
     message: string,
   ): Promise<Boolean> {
@@ -235,5 +238,40 @@ export class NotificationService {
     return `Kode OTP Smartparking Anda adalah: ${otp}. Kode ini berlaku selama 10 menit. \n
     \n
     Abaikan Jika Anda Tidak Melakukan Bukan Anda. `;
+  }
+
+  private async sendOtpViaZenzivaWaOfficial(
+    phoneNumber: string,
+    otp: string,
+  ): Promise<void> {
+    phoneNumber = phoneNumber.replace(/^\+/, '');
+    const payload = {
+      userkey: this.zenzivaUserKey,
+      passkey: this.zenzivaPassKey,
+      to: phoneNumber,
+      brand: 'Smart Parking',
+      otp: otp,
+    };
+
+    this.logger.debug(
+      `payload zenziva whatsapp otp ${JSON.stringify(payload)}`,
+    );
+
+    try {
+      const response = await axios.post(
+        'https://console.zenziva.net/waofficial/api/sendWAOfficial/',
+        qs.stringify(payload),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        },
+      );
+
+      console.log(response.data);
+      // Kamu bisa parsing response.data untuk lihat status
+    } catch (error) {
+      console.error('Gagal kirim Zenziva Whatsapp OTP:', error.message);
+    }
   }
 }
