@@ -9,6 +9,7 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Query,
 } from '@nestjs/common';
 import { CONFIG } from '../config/config.schema';
 import {
@@ -154,10 +155,12 @@ export class PaymentsController {
   async checkPaymentStatus(
     @JWTAuthorization() user: any,
     @Param('id', ParseIntPipe) bookingId: number,
+    @Query('count', ParseIntPipe) count: number,
   ): Promise<WebSuccessResponse<any>> {
     const result = await this.paymentsService.checkPaymentStatusService(
       user,
       bookingId,
+      count,
     );
 
     return {

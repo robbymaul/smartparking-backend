@@ -141,6 +141,9 @@ export class AdminRepository implements IAdminRepository {
         },
         skip: skip,
         take: perPage,
+        orderBy: {
+          id: 'desc',
+        },
       });
 
       return bookings.map((value) =>

@@ -203,7 +203,11 @@ export class PaymentsService {
     }
   }
 
-  async checkPaymentStatusService(user: any, bookingId: number): Promise<any> {
+  async checkPaymentStatusService(
+    user: any,
+    bookingId: number,
+    count: number,
+  ): Promise<any> {
     const bookingEntity =
       await this.paymentRepository.getBookingByIdRepository(bookingId);
 
@@ -231,13 +235,24 @@ export class PaymentsService {
       this.logger.debug(`status result ${JSON.stringify(statusResult)}`);
 
       if (statusResult.transactionStatus !== 'pending') {
-        const newStatus =
-          statusResult.transactionStatus === 'settlement' ||
-          statusResult.transactionStatus === 'capture'
-            ? PaymentStatus.COMPLETED
-            : PaymentStatus.FAILED;
+        let newStatus: PaymentStatus;
+        if (count <= 3) {
+          newStatus =
+            statusResult.transactionStatus === 'settlement' ||
+            statusResult.transactionStatus === 'capture'
+              ? PaymentStatus.COMPLETED
+              : PaymentStatus.PROCESSING;
 
-        bookingPaymentEntity.paymentStatus = newStatus;
+          bookingPaymentEntity.paymentStatus = newStatus;
+        } else {
+          newStatus =
+            statusResult.transactionStatus === 'settlement' ||
+            statusResult.transactionStatus === 'capture'
+              ? PaymentStatus.COMPLETED
+              : PaymentStatus.FAILED;
+
+          bookingPaymentEntity.paymentStatus = newStatus;
+        }
 
         await this.paymentRepository.updateBookingPaymentRepository(
           bookingPaymentEntity,
