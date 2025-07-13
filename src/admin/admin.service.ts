@@ -198,6 +198,13 @@ export class AdminService {
             newSystemLogEntity,
           );
 
+          await this.notificationService.sendOtp(
+            'register',
+            adminEntity.email,
+            adminEntity.contactNumber ?? '',
+            password,
+          );
+
           return {
             message: 'Berhasil membuat admin baru',
             success: true,

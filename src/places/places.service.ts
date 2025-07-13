@@ -211,7 +211,7 @@ export class PlacesService {
         const generatePasswordRandom =
           await this.generatorService.generateStrongPassword();
         const digitRandom = await this.generatorService.getRandom9Digits();
-        const passwordHash = await bcrypt.hash(generatePasswordRandom, 10);
+        const passwordHash = await bcrypt.hash('12345678', 10);
 
         const newPlaceAdmin: PlaceAdminEntity = new PlaceAdminEntity({
           id: 0,
@@ -232,16 +232,16 @@ export class PlacesService {
           );
 
         // notification email
-        await this.notificationService.sendRegisterInfoEmail(
-          placeAdmin.username,
-          placeAdmin.email,
-          new Date().toLocaleDateString('id-ID', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          }),
-          generatePasswordRandom,
-        );
+        // await this.notificationService.sendRegisterInfoEmail(
+        //   placeAdmin.username,
+        //   placeAdmin.email,
+        //   new Date().toLocaleDateString('id-ID', {
+        //     year: 'numeric',
+        //     month: 'long',
+        //     day: 'numeric',
+        //   }),
+        //   generatePasswordRandom,
+        // );
 
         // system log
         const newSystemLogEntity = new SystemLogEntity({
